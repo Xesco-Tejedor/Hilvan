@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+<meta charset="utf-8">
+<meta name="viewport" content="width=device-width, initial-scale=1, viewport-fit=cover">
+<meta name="theme-color" content="#16130f">
+<title>Hilván · generador de relatos con dado</title>
+<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Ctext y='.9em' font-size='90'%3E%F0%9F%8E%B2%3C/text%3E%3C/svg%3E">
+<link rel="preconnect" href="https://fonts.googleapis.com"><link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Space+Grotesk:wght@400;500;600;700&display=swap" rel="stylesheet">
+<style>
+:root{--bg:#16130f;--bg2:#1f1a14;--card:#241e17;--line:#3a3025;--amber:#ffb000;--amber2:#ff8a00;--soft:#ffd27a;--text:#f3ead9;--mut:#a89a82;--bad:#ff6b5b;--ok:#9be37a}
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;background:var(--bg);color:var(--text);font-family:'Space Grotesk',system-ui,sans-serif;font-size:16px;line-height:1.5}
+body{padding-bottom:calc(92px + env(safe-area-inset-bottom))}
+#fx{position:fixed;inset:0;z-index:0;pointer-events:none}
+.wrap{position:relative;z-index:1;max-width:760px;margin:0 auto;padding:16px}
+header{display:flex;align-items:center;gap:12px;margin:6px 0 14px}
+.logo{font-size:34px;animation:bob 3.2s ease-in-out infinite;filter:drop-shadow(0 0 12px rgba(255,176,0,.6))}
+h1{font-size:26px;margin:0;letter-spacing:-.5px;background:linear-gradient(90deg,var(--amber),var(--soft),var(--amber2),var(--amber));background-size:250% 100%;-webkit-background-clip:text;background-clip:text;color:transparent;animation:sheen 6s linear infinite}
+.sub{color:var(--mut);font-size:13px;margin-top:-2px}
+@keyframes bob{0%,100%{transform:translateY(0) rotate(-6deg)}50%{transform:translateY(-6px) rotate(8deg)}}
+@keyframes sheen{to{background-position:-250% 0}}
+@keyframes rise{from{opacity:0;transform:translateY(14px)}to{opacity:1;transform:none}}
+@keyframes glow{0%,100%{box-shadow:0 0 0 1px var(--line),0 8px 28px rgba(255,150,0,.08)}50%{box-shadow:0 0 0 1px #5a4326,0 10px 34px rgba(255,150,0,.2)}}
+.card{background:linear-gradient(180deg,var(--card),var(--bg2));border:1px solid var(--line);border-radius:18px;padding:16px;margin:14px 0;animation:rise .5s both,glow 5s ease-in-out infinite}
+.card h2{margin:0 0 10px;font-size:15px;text-transform:uppercase;letter-spacing:1.5px;color:var(--soft);font-weight:600}
+textarea,input[type=text],select{width:100%;background:#120f0b;color:var(--text);border:1px solid var(--line);border-radius:12px;padding:12px;font:inherit;font-size:16px}
+textarea{min-height:92px;resize:vertical}
+textarea:focus,input:focus,select:focus{outline:2px solid var(--amber);outline-offset:1px}
+button{font:inherit;cursor:pointer;border:0;border-radius:12px;padding:12px 16px;font-weight:600;color:#1a1200;background:linear-gradient(135deg,var(--amber),var(--amber2));transition:transform .15s,filter .15s,box-shadow .2s;box-shadow:0 4px 18px rgba(255,150,0,.25)}
+button:active{transform:scale(.96)}
+button:disabled{filter:grayscale(.8) brightness(.6);cursor:default}
+button.ghost{background:transparent;color:var(--soft);border:1px solid var(--line);box-shadow:none}
+button.ghost:hover{border-color:var(--amber)}
+button.sm{padding:8px 12px;font-size:14px;border-radius:10px}
+.row{display:flex;gap:10px;flex-wrap:wrap;align-items:center}
+.row>*{flex:1 1 auto}
+.chips{display:flex;flex-wrap:wrap;gap:8px;margin-top:10px}
+.chip{background:#120f0b;border:1px solid var(--line);color:var(--soft);padding:7px 12px;border-radius:99px;font-size:14px;font-weight:500;box-shadow:none}
+.chip.on{background:var(--amber);color:#1a1200;border-color:var(--amber)}
+.sl{margin:12px 0}
+.sl label{display:flex;justify-content:space-between;font-size:14px;color:var(--text)}
+.sl label b{color:var(--amber);font-weight:600}
+.sl small{color:var(--mut);display:block;font-size:12px}
+input[type=range]{width:100%;accent-color:var(--amber);height:34px}
+.mut{color:var(--mut);font-size:13px}
+.seg{position:relative;margin:18px 0;padding:16px 16px 12px;border-left:3px solid var(--amber);background:linear-gradient(90deg,rgba(255,176,0,.06),transparent);border-radius:0 14px 14px 0;animation:rise .5s both}
+.seg.dado{border-left-color:var(--bad);background:linear-gradient(90deg,rgba(255,107,91,.09),transparent)}
+.seg .tag{font-size:12px;color:var(--amber);text-transform:uppercase;letter-spacing:1.2px;margin-bottom:6px}
+.seg.dado .tag{color:var(--bad)}
+.seg .txt{white-space:pre-wrap;font-size:17px;line-height:1.65}
+.seg .txt[contenteditable=true]{outline:2px dashed var(--amber);padding:6px;border-radius:8px}
+.seg img{width:100%;border-radius:12px;margin-top:12px;border:1px solid var(--line);display:block;animation:rise .6s both}
+.tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+.ph{height:120px;border-radius:12px;margin-top:12px;border:1px dashed var(--amber);display:flex;align-items:center;justify-content:center;color:var(--soft);background:linear-gradient(110deg,#1b1610 30%,#2b2218 50%,#1b1610 70%);background-size:200% 100%;animation:shim 1.4s linear infinite}
+@keyframes shim{to{background-position:-200% 0}}
+.bar{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(22,19,15,0),rgba(22,19,15,.96) 28%);backdrop-filter:blur(6px)}
+.bar .in{max-width:760px;margin:0 auto;display:flex;gap:10px}
+.bar button{flex:1}
+#dieBtn{flex:0 0 auto;width:64px;padding:0;font-size:30px;background:linear-gradient(135deg,#ff6b5b,#ff8a00);box-shadow:0 0 22px rgba(255,107,91,.45)}
+#dieBtn.spin span{display:inline-block;animation:spin .7s linear infinite}
+@keyframes spin{to{transform:rotate(360deg)}}
+#diceBox{position:fixed;inset:0;z-index:50;background:rgba(10,8,5,.82);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:24px;text-align:center}
+#diceBox.on{display:flex}
+#dnum{font-size:96px;font-weight:700;color:var(--amber);text-shadow:0 0 40px rgba(255,176,0,.7);width:170px;height:170px;display:flex;align-items:center;justify-content:center;border:3px solid var(--amber);border-radius:30px;transform:rotate(45deg)}
+#dnum i{font-style:normal;transform:rotate(-45deg)}
+#dnum.roll{animation:wob .25s linear infinite}
+@keyframes wob{0%{transform:rotate(30deg) scale(1)}50%{transform:rotate(60deg) scale(1.08)}100%{transform:rotate(30deg) scale(1)}}
+#dtxt{font-size:19px;max-width:420px;min-height:60px}
+.err{color:var(--bad);background:rgba(255,107,91,.1);border:1px solid rgba(255,107,91,.4);padding:10px 12px;border-radius:12px;margin:10px 0;font-size:14px}
+.opt{display:block;width:100%;text-align:left;margin-top:8px;background:#120f0b;color:var(--text);border:1px solid var(--line);box-shadow:none;font-weight:500}
+.opt:hover{border-color:var(--amber)}
+.char{border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0;background:#120f0b}
+.char b{color:var(--soft)}
+.char textarea{min-height:56px;margin-top:6px;font-size:14px}
+#toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-90px);background:var(--amber);color:#1a1200;padding:10px 16px;border-radius:12px;font-weight:600;z-index:60;transition:transform .3s;max-width:90vw}
+#toast.on{transform:translate(-50%,0)}
+.hid{display:none!important}
+details summary{cursor:pointer;color:var(--soft);font-weight:600;list-style:none}
+details summary::before{content:"▸ ";color:var(--amber)}
+details[open] summary::before{content:"▾ "}
+a{color:var(--soft)}
+@media (prefers-reduced-motion:reduce){*{animation-duration:.01s!important;animation-iteration-count:1!important}}
+</style>
+</head>
+<body>
+<canvas id="fx"></canvas>
+<div class="wrap">
+  <header><div class="logo">🎲</div><div><h1>Hilván</h1><div class="sub">Relatos que se tejen con azar ajustable</div></div></header>
+
+  <section id="start" class="card">
+    <h2>1 · Punto de partida</h2>
+    <textarea id="premise" placeholder="Una frase para empezar… («El faro llevaba siete años apagado, pero esa noche alguien subió a encenderlo»)"></textarea>
+    <div class="row" style="margin-top:10px">
+      <button class="ghost" id="imgPick">📷 O parte de una imagen</button>
+      <input type="file" id="imgFile" accept="image/*" class="hid">
+    </div>
+    <div id="imgPrev" class="hid" style="margin-top:10px"><img id="imgPrevImg" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid var(--line)"><div class="mut" style="margin-top:6px">La IA mirará la imagen y la usará como semilla (solo Gemini lee imágenes). <a href="#" id="imgClear">Quitar</a></div></div>
+    <div class="chips" id="genres"></div>
+    <div class="mut" style="margin-top:8px">Género (opcional, puedes elegir varios)</div>
+    <div id="startRoster" class="hid"><div class="chips" id="rChips"></div><div class="mut" style="margin-top:8px">Personajes de tu reparto que entran en este relato (opcional)</div></div>
+  </section>
+
+  <section class="card" id="params">
+    <h2>Azar y estilo <span class="mut" style="text-transform:none;letter-spacing:0">· se aplican al siguiente trozo</span></h2>
+    <div id="sliders"></div>
+    <div class="row" style="margin-top:6px">
+      <div><div class="mut">Longitud de cada trozo</div><select id="len"><option value="90">Corto (~90 palabras)</option><option value="160" selected>Medio (~160)</option><option value="280">Largo (~280)</option></select></div>
+      <div><div class="mut">Persona narrativa</div><select id="pov"><option value="tercera persona">Tercera persona</option><option value="primera persona">Primera persona</option><option value="segunda persona (tú)">Segunda persona (tú)</option></select></div>
+    </div>
+  </section>
+
+  <section id="story" class="hid">
+    <div class="card" style="margin-bottom:0"><h2 id="stTitle">Relato</h2><div class="mut" id="stMeta"></div></div>
+    <div id="segs"></div>
+    <div id="opts"></div>
+    <div id="errs"></div>
+    <div class="card">
+      <h2>Dirigir (opcional)</h2>
+      <input type="text" id="dir" placeholder="¿Qué debería pasar a continuación? Déjalo vacío para que decida el azar">
+    </div>
+    <details class="card" id="bibleBox"><summary>Biblia del relato · continuidad</summary>
+      <div class="mut" style="margin:8px 0">Aquí se guarda lo que la IA debe respetar. Edita los aspectos físicos: se usan tal cual para cada imagen.</div>
+      <div class="mut">Estilo visual (inglés, se añade a cada imagen)</div>
+      <textarea id="styleTxt" style="min-height:60px"></textarea>
+      <div id="chars"></div>
+      <div class="mut" style="margin-top:10px">Hechos fijados</div>
+      <div id="facts" class="mut" style="color:var(--text)"></div>
+      <div class="row" style="margin-top:10px"><button class="ghost sm" id="addChar">+ Personaje</button><button class="ghost sm" id="newSeed">🎨 Nueva semilla visual</button></div>
+    </details>
+    <details class="card"><summary>Exportar y guardar</summary>
+      <div class="row" style="margin-top:12px">
+        <button class="sm" data-x="html">Página HTML (con imágenes)</button>
+        <button class="sm" data-x="pdf">PDF (imprimir)</button>
+        <button class="sm" data-x="md">Markdown</button>
+        <button class="sm" data-x="json">JSON (copia completa)</button>
+      </div>
+      <div class="row" style="margin-top:10px"><button class="ghost sm" id="impBtn">Importar JSON</button><input type="file" id="impFile" accept=".json,application/json" class="hid"><button class="ghost sm" id="reset">Empezar otro relato</button></div>
+      <div class="mut" style="margin-top:8px">Se guarda solo en este navegador. Exporta para conservarlo.</div>
+    </details>
+  </section>
+
+  <section class="card" id="rosterCard">
+    <h2>Mi reparto · personajes guardados</h2>
+    <div class="mut">Cada personaje que surge se guarda aquí solo, en este navegador, y sigue ahí en otros relatos. Edita su aspecto y reutilízalos cuando quieras.</div>
+    <div id="roster"></div>
+    <div class="row" style="margin-top:10px"><button class="ghost sm" id="rAdd">+ Personaje nuevo</button></div>
+  </section>
+
+  <section class="card">
+    <h2>Cuotas y límites, sin rodeos</h2>
+    <div class="mut" style="color:var(--text)" id="quota"></div>
+    <div class="row" style="margin-top:10px"><div><div class="mut">Proveedor de texto</div><select id="prov"><option value="auto">Automático (Gemini, luego OpenRouter)</option><option value="gemini">Solo Gemini</option><option value="openrouter">Solo OpenRouter (gratis)</option></select></div></div>
+    <div class="mut" style="margin-top:10px">Todo usa niveles gratuitos. OpenRouter permite 50 peticiones al día en total, compartidas con Forja de Mundos y TreaSeek. Gemini gratuito también tiene tope y a veces se satura. Cada trozo gasta 1 petición.</div>
+    <div class="mut" style="margin-top:8px"><b style="color:var(--soft)">Sobre las imágenes:</b> se generan con Pollinations (gratis, sin clave) y no con tu cuota de texto. Mantienen la continuidad fijando una semilla, un estilo común y el aspecto de cada personaje en cada imagen. Eso acerca mucho los rostros, la ropa y la paleta, pero no garantiza que sea exactamente la misma persona en todas. Si una imagen se desvía, regenérala o ajusta la descripción en la biblia. El texto de la escena se envía a un servicio externo.</div>
+  </section>
+</div>
+
+<div class="bar" id="bar"><div class="in">
+  <button id="dieBtn" class="hid" title="Dado de emergencia"><span>🎲</span></button>
+  <button id="goBtn">✨ Empezar relato</button>
+</div></div>
+
+<div id="diceBox"><div id="dnum" class="roll"><i>20</i></div><div id="dtxt"></div></div>
+<div id="toast"></div>
+
+<script>
+const PROXY="https://gemini-proxy.francesc-adria-perello.workers.dev/";
+const FREE_MODEL="google/gemma-4-31b-it:free";
+const $=id=>document.getElementById(id);
+const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const uid=()=>Math.random().toString(36).slice(2,10);
+const clip=(s,n)=>{s=String(s||"");return s.length>n?s.slice(0,n-1)+"…":s};
+function toast(t){const e=$("toast");e.textContent=t;e.classList.add("on");clearTimeout(toast.t);toast.t=setTimeout(()=>e.classList.remove("on"),2600)}
+
+/* ---------- fondo de brasas ---------- */
+(function(){const c=$("fx"),x=c.getContext("2d");let W,H,P=[];
+function rs(){W=c.width=innerWidth;H=c.height=innerHeight}rs();addEventListener("resize",rs);
+for(let i=0;i<46;i++)P.push({x:Math.random()*W,y:Math.random()*H,r:Math.random()*2.4+.6,v:Math.random()*.5+.15,d:Math.random()*6,a:Math.random()*.5+.2});
+if(matchMedia("(prefers-reduced-motion:reduce)").matches)return;
+(function f(){x.clearRect(0,0,W,H);for(const p of P){p.y-=p.v;p.d+=.015;p.x+=Math.sin(p.d)*.4;if(p.y<-10){p.y=H+10;p.x=Math.random()*W}
+x.beginPath();x.fillStyle="rgba(255,"+(140+p.r*18|0)+",0,"+p.a*(.6+.4*Math.sin(p.d*2))+")";x.shadowColor="#ff9a00";x.shadowBlur=10;x.arc(p.x,p.y,p.r,0,7);x.fill()}requestAnimationFrame(f)})()})();
+
+/* ---------- almacenamiento ---------- */
+const LS="hilvan-v1";
+let idb;function idbOpen(){return new Promise((res,rej)=>{if(idb)return res(idb);const r=indexedDB.open("hilvan-img",1);r.onupgradeneeded=()=>r.result.createObjectStore("i");r.onsuccess=()=>{idb=r.result;res(idb)};r.onerror=()=>rej(r.error)})}
+async function imgPut(k,v){try{const d=await idbOpen();return new Promise(r=>{const t=d.transaction("i","readwrite");t.objectStore("i").put(v,k);t.oncomplete=()=>r(true);t.onerror=()=>r(false)})}catch{return false}}
+async function imgGet(k){try{const d=await idbOpen();return new Promise(r=>{const q=d.transaction("i").objectStore("i").get(k);q.onsuccess=()=>r(q.result||null);q.onerror=()=>r(null)})}catch{return null}}
+let S=null; // estado del relato
+const IMGC={}; // caché imágenes
+const save=()=>{try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){toast("No se pudo guardar en el navegador")}};
+
+
+/* ---------- reparto persistente ---------- */
+const RL="hilvan-roster";
+let ROSTER=[];try{ROSTER=JSON.parse(localStorage.getItem(RL)||"[]")}catch{ROSTER=[]}
+const rsave=()=>{try{localStorage.setItem(RL,JSON.stringify(ROSTER))}catch{toast("No se pudo guardar el reparto")}};
+const rfind=n=>ROSTER.find(r=>r.nombre.toLowerCase()===String(n).toLowerCase());
+function rupsert(c,from){const ex=rfind(c.nombre);if(ex){if(!ex.aspecto&&c.aspecto)ex.aspecto=c.aspecto;if(!ex.rol&&c.rol)ex.rol=c.rol}else ROSTER.push({id:uid(),nombre:c.nombre,rol:c.rol||"",aspecto:c.aspecto||"",notas:"",de:from||""});rsave()}
+function renderRoster(){
+ $("roster").innerHTML=ROSTER.length?ROSTER.map(r=>`<div class="char" data-r="${r.id}"><b>${esc(r.nombre)}</b> <span class="mut">${esc(r.rol||"")}${r.de?" · de «"+esc(clip(r.de,30))+"»":""}</span><textarea data-ra="${r.id}" placeholder="Aspecto visual en inglés (se usa en las imágenes)">${esc(r.aspecto)}</textarea><div class="tools">${S&&S.segs.length?`<button class="ghost sm" data-rb="use">Usar en este relato</button>`:""}<button class="ghost sm" data-rb="del">Quitar</button></div></div>`).join(""):'<div class="mut" style="margin-top:8px">Aún no hay personajes. Aparecerán al generar el relato.</div>';
+ const sr=$("startRoster");sr.classList.toggle("hid",!ROSTER.length||!!(S&&S.segs.length));
+ $("rChips").innerHTML=ROSTER.map(r=>`<button class="chip" data-rid="${r.id}">${esc(r.nombre)}</button>`).join("");}
+$("rChips").onclick=e=>{const b=e.target.closest(".chip");if(b)b.classList.toggle("on")};
+$("roster").addEventListener("input",e=>{const id=e.target.dataset.ra;if(!id)return;const r=ROSTER.find(x=>x.id===id);r.aspecto=e.target.value;rsave();if(S){const c=S.bible.chars.find(x=>x.nombre.toLowerCase()===r.nombre.toLowerCase());if(c){c.aspecto=r.aspecto;save()}}});
+$("roster").addEventListener("click",e=>{const b=e.target.closest("[data-rb]");if(!b)return;const id=b.closest(".char").dataset.r,r=ROSTER.find(x=>x.id===id);
+ if(b.dataset.rb==="del"){if(confirm("¿Quitar a "+r.nombre+" del reparto?")){ROSTER=ROSTER.filter(x=>x.id!==id);rsave();renderRoster()}}
+ else if(S&&!S.bible.chars.some(c=>c.nombre.toLowerCase()===r.nombre.toLowerCase())){S.bible.chars.push({nombre:r.nombre,rol:r.rol,aspecto:r.aspecto});save();renderAll();toast(r.nombre+" ya está en el relato. Dirígelo para que aparezca.")}else toast("Ya está en este relato")});
+$("rAdd").onclick=()=>{const n=prompt("Nombre del personaje");if(!n)return;rupsert({nombre:n.trim(),rol:"",aspecto:""},"");renderRoster()};
+
+/* ---------- parámetros ---------- */
+const SL=[
+ {k:"azar",n:"Azar creativo",d:"Bajo: previsible y coherente. Alto: sorprendente y arriesgado.",v:55,t:["muy contenido y previsible","contenido","equilibrado entre lo esperable y lo inesperado","atrevido, con decisiones inesperadas","desatado: asociaciones raras y rumbos imprevisibles"]},
+ {k:"giros",n:"Giros de trama",d:"Cuánto tiende a torcerse la historia.",v:35,t:["sin giros, avance natural","giros muy sutiles","algún giro ocasional","giros frecuentes","un giro en casi cada trozo"]},
+ {k:"tono",n:"Tono",d:"Sombrío ↔ luminoso.",v:40,t:["oscuro y opresivo","sombrío","ambiguo, entre luces y sombras","esperanzado","luminoso y alegre"]},
+ {k:"ritmo",n:"Ritmo",d:"Pausado ↔ frenético.",v:50,t:["muy pausado y contemplativo","pausado","ritmo medio","ágil","frenético, frases cortas y acción"]},
+ {k:"detalle",n:"Descripción",d:"Sobria ↔ florida.",v:50,t:["muy sobria, casi telegráfica","sobria","equilibrada","rica en detalles sensoriales","exuberante y barroca"]},
+ {k:"canon",n:"Fidelidad al canon",d:"Alta: respeta al máximo lo ya contado. Baja: se permite reinterpretarlo.",v:80,t:["libre, puede reinterpretar lo anterior","bastante libre","respetuosa","muy respetuosa","estricta: no contradice nada de lo establecido"]}
+];
+const GEN=["Terror","Ciencia ficción","Fantasía","Misterio","Aventura","Humor","Romance","Western","Cyberpunk","Realismo mágico","Retro 8 bits"];
+const band=(v,L)=>L[Math.min(L.length-1,Math.floor(v/(100/L.length)))];
+function buildSliders(){const P=S&&S.params||{};$("sliders").innerHTML=SL.map(s=>`<div class="sl"><label><span>${s.n}</span><b id="sv-${s.k}"></b></label><input type="range" min="0" max="100" id="sr-${s.k}" value="${P[s.k]!=null?P[s.k]:s.v}"><small>${s.d}</small></div>`).join("");
+ SL.forEach(s=>{const r=$("sr-"+s.k),u=()=>{$("sv-"+s.k).textContent=band(+r.value,s.t).split(",")[0];if(S){S.params=S.params||{};S.params[s.k]=+r.value;save()}};r.oninput=u;u()})}
+const getParams=()=>Object.fromEntries(SL.map(s=>[s.k,+$("sr-"+s.k).value]));
+function buildGenres(sel){$("genres").innerHTML=GEN.map(g=>`<button class="chip${sel&&sel.includes(g)?" on":""}" data-g="${g}">${g}</button>`).join("");$("genres").onclick=e=>{const b=e.target.closest(".chip");if(b)b.classList.toggle("on")}}
+const getGenres=()=>[...document.querySelectorAll("#genres .chip.on")].map(b=>b.dataset.g);
+
+/* ---------- dado ---------- */
+const DADO=[
+ [1,1,"CATÁSTROFE","Ocurre algo grave e irreversible que cambia lo que está en juego."],
+ [2,4,"COMPLICACIÓN","Surge un obstáculo inesperado que dificulta lo que intentaban."],
+ [5,8,"DATO NUEVO","Se revela un dato nuevo y sorprendente sobre el pasado, un personaje o el lugar."],
+ [9,12,"VISITA INESPERADA","Aparece alguien o algo que nadie esperaba, con intenciones poco claras."],
+ [13,15,"OBJETO O LUGAR","Se descubre un objeto, lugar o regla del mundo nuevos que cambian las opciones."],
+ [16,17,"GIRO DE LEALTADES","Alguien no es quien parecía o cambia de bando."],
+ [18,19,"VARIANTE ALOCADA","Irrumpe un elemento absurdo, surrealista o desmesurado, tratado en serio dentro del relato."],
+ [20,20,"CRÍTICO","Ocurre lo imposible: las reglas del mundo se doblan y todo queda cambiado."]
+];
+const dadoOf=n=>DADO.find(d=>n>=d[0]&&n<=d[1]);
+let rolling=false;
+async function rollDie(){if(rolling||busy)return;rolling=true;const box=$("diceBox"),num=$("dnum");box.classList.add("on");num.classList.add("roll");$("dtxt").textContent="";
+ const n=1+Math.floor(Math.random()*20);let t=0;
+ await new Promise(r=>{const iv=setInterval(()=>{num.firstChild.textContent=1+Math.floor(Math.random()*20);if(++t>14){clearInterval(iv);r()}},70)});
+ num.classList.remove("roll");num.firstChild.textContent=n;const d=dadoOf(n);$("dtxt").innerHTML=`<b style="color:var(--amber)">${d[2]}</b><br>${d[3]}`;
+ await new Promise(r=>setTimeout(r,1500));box.classList.remove("on");rolling=false;
+ await step({dado:{n,tipo:d[2],txt:d[3]}})}
+
+/* ---------- IA ---------- */
+let aiPref=localStorage.getItem("hilvan-prov")||"auto";
+const today=()=>new Date().toISOString().slice(0,10);
+function qget(){try{const q=JSON.parse(localStorage.getItem("hilvan-q")||"{}");return q.d===today()?q:{d:today(),g:0,o:0}}catch{return{d:today(),g:0,o:0}}}
+function qadd(p){const q=qget();q[p==="openrouter"?"o":"g"]++;localStorage.setItem("hilvan-q",JSON.stringify(q));qshow()}
+function qshow(){const q=qget();$("quota").innerHTML=`Hoy desde este navegador: <b style="color:var(--amber)">${q.g}</b> peticiones a Gemini y <b style="color:var(--amber)">${q.o}</b> a OpenRouter (tope de OpenRouter: 50/día entre todas las apps; otras apps también gastan de ahí, así que este contador es un mínimo).`}
+$("prov").value=aiPref;$("prov").onchange=()=>{aiPref=$("prov").value;localStorage.setItem("hilvan-prov",aiPref)};
+async function callAI(system,user,temp,imgs){
+ const parts=[{text:user}];(imgs||[]).forEach(i=>parts.push({inlineData:{mimeType:i.mime,data:i.data}}));
+ const body={systemInstruction:{parts:[{text:system}]},contents:[{role:"user",parts}],generationConfig:{temperature:temp,responseMimeType:"application/json"},freeModel:FREE_MODEL};
+ let provs=aiPref==="auto"?["gemini","openrouter"]:[aiPref];
+ if(imgs&&imgs.length)provs=["gemini"];
+ for(let i=0;i<provs.length;i++){const p=provs[i],ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),200000);let r,d;
+  try{r=await fetch(PROXY+(p==="openrouter"?"openrouter":""),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:ctrl.signal});d=await r.json()}
+  catch(e){clearTimeout(tm);if(i+1<provs.length)continue;throw new Error(e.name==="AbortError"?"La IA ha tardado demasiado. Inténtalo de nuevo.":"No se pudo contactar con la IA.")}
+  clearTimeout(tm);qadd(p);
+  if(!r.ok||d.error){const m=String(d.error&&(d.error.message||d.error)||"");
+   if(i+1<provs.length&&[429,503,500,502,404].includes(r.status)){toast("Gemini no disponible. Probando OpenRouter gratis…");continue}
+   if(r.status===429)throw new Error(p==="openrouter"?"OpenRouter ha llegado a su límite (20/min y 50/día gratis, compartido). Espera o prueba Gemini.":"Gemini ha llegado a su cuota o está saturado. Espera un poco o prueba OpenRouter.");
+   throw new Error((p==="openrouter"?"OpenRouter: ":"Gemini: ")+clip(m,180))}
+  const out=((d.candidates&&d.candidates[0]&&d.candidates[0].content&&d.candidates[0].content.parts)||[]).map(x=>x.text||"").join("");
+  if(!out){if(i+1<provs.length)continue;throw new Error("La IA no devolvió texto. Inténtalo otra vez.")}
+  return {text:out,prov:p==="openrouter"?"OpenRouter":"Gemini"}}
+ throw new Error("Sin respuesta de la IA.")}
+function parseJSON(t){t=t.trim().replace(/^```(?:json)?/i,"").replace(/```$/,"").trim();try{return JSON.parse(t)}catch(e){const m=t.match(/\{[\s\S]*\}/);if(m)return JSON.parse(m[0]);throw e}}
+async function aiJSON(sys,user,temp,imgs){let last;for(let i=0;i<2;i++){try{const r=await callAI(sys,user,temp,imgs);const j=parseJSON(r.text);j._prov=r.prov;return j}catch(e){last=e;if(!(e instanceof SyntaxError))throw e}}throw new Error("La IA devolvió un formato no válido. Inténtalo de nuevo.")}
+
+const SYS=`Eres un narrador de ficción en español de España: prosa concreta, viva y sin relleno ni moralejas. Escribes UN trozo de relato cada vez y devuelves SIEMPRE un único objeto JSON válido, sin texto fuera del JSON.
+Reglas: 1) Continúa exactamente donde acaba el relato; no repitas lo ya contado. 2) Respeta la BIBLIA (nombres, rasgos, hechos) según la fidelidad indicada. 3) Cuando aparezca un personaje por primera vez, descríbelo en "personajes_nuevos" con un aspecto visual concreto en inglés (edad aproximada, rostro, pelo, ropa distintiva, colores) que se pueda reutilizar idéntico en cada ilustración. 4) "escena_visual" describe en inglés, en una frase concreta, el momento más ilustrable del trozo (sin nombres propios: usa rasgos). 5) "en_escena" lista los nombres exactos de los personajes visibles. 6) "hechos" son 1-3 hechos nuevos y fijos que el relato debe recordar. 7) "opciones" son 3 direcciones posibles muy breves (máx. 9 palabras) para lo que podría ocurrir después. 8) Termina el trozo en un punto que invite a seguir, sin cerrar la historia salvo que se pida.`;
+function paramText(p){return SL.map(s=>`${s.n}: ${band(p[s.k],s.t)}`).join("; ")}
+function bibleText(){const b=S.bible;return `TÍTULO: ${S.title}\nGÉNERO: ${S.genres.join(", ")||"libre"}\nPERSONAJES YA EXISTENTES (úsalos si encajan, con este aspecto exacto):\n${b.chars.map(c=>`- ${c.nombre}: ${c.rol||""}. Aspecto: ${c.aspecto}`).join("\n")||"(ninguno aún)"}\nHECHOS FIJADOS:\n${b.facts.slice(-24).map(f=>"- "+f).join("\n")||"(ninguno aún)"}`}
+function memoryText(){const sg=S.segs;const old=sg.slice(0,-2).map(s=>s.resumen||clip(s.text,160)).join(" ");const last=sg.slice(-2).map(s=>s.text).join("\n\n");return `RESUMEN DE LO ANTERIOR: ${old||"(es el principio)"}\n\nÚLTIMOS TROZOS (texto completo):\n${last||"(nada aún)"}`}
+function applyResult(j,seg){
+ seg.text=String(j.texto||"").trim();seg.escena=String(j.escena_visual||"").trim();seg.enScena=[].concat(j.en_escena||[]).map(String);seg.resumen=String(j.resumen||"").trim();seg.opciones=[].concat(j.opciones||[]).map(String).slice(0,3);
+ for(const c of [].concat(j.personajes_nuevos||[])){if(!c||!c.nombre)continue;const n=String(c.nombre).trim();const ex=S.bible.chars.find(x=>x.nombre.toLowerCase()===n.toLowerCase());if(ex){if(!ex.aspecto&&c.aspecto_visual)ex.aspecto=String(c.aspecto_visual)}else{const nc={nombre:n,rol:String(c.rol||""),aspecto:String(c.aspecto_visual||c.aspecto||"")};const rr=rfind(n);if(rr&&rr.aspecto)nc.aspecto=rr.aspecto;S.bible.chars.push(nc)}rupsert(S.bible.chars.find(x=>x.nombre.toLowerCase()===n.toLowerCase()),S.title)}
+ for(const f of [].concat(j.hechos||[]))if(f&&!S.bible.facts.includes(String(f)))S.bible.facts.push(String(f));
+ S.provLast=j._prov}
+
+/* ---------- flujo ---------- */
+let busy=false,imgData=null;
+function setBusy(b){busy=b;$("goBtn").disabled=b;$("dieBtn").disabled=b;if(b)$("goBtn").dataset.t=$("goBtn").textContent;$("goBtn").textContent=b?"Tejiendo…":(S?"➕ Continuar":"✨ Empezar relato");$("dieBtn").classList.toggle("spin",b)}
+function showErr(m){$("errs").innerHTML=m?`<div class="err">${esc(m)}</div>`:""}
+async function step(extra){
+ if(busy)return;showErr("");extra=extra||{};
+ const p=getParams();S.params=p;
+ let temp=0.35+p.azar/100*1.05;if(extra.dado)temp=Math.min(1.6,temp+.3);
+ const target=+$("len").value,pov=$("pov").value;S.len=target;S.pov=pov;
+ const dir=($("dir").value||"").trim();
+ let prompt;
+ const starting=!S.segs.length;
+ if(starting){
+  prompt=`INICIO DE UN RELATO NUEVO.\nSEMILLA DEL AUTOR: ${S.premise||"(libre; a partir de la imagen adjunta)"}\n${S.hasImage?"Hay una imagen adjunta: úsala como semilla (ambiente, personajes, objetos) sin describirla como una foto.\n":""}GÉNERO: ${S.genres.join(", ")||"libre"}\n${S.bible.chars.length?"PERSONAJES QUE DEBEN APARECER (aspecto fijo): "+S.bible.chars.map(c=>c.nombre+" ("+(c.rol||"")+"): "+c.aspecto).join(" | ")+"\n":""}AJUSTES: ${paramText(p)}\nPERSONA: ${pov}. LONGITUD: unas ${target} palabras.\nDevuelve JSON con: titulo (corto y con gancho), estilo_visual (inglés, una línea: técnica, paleta, luz, atmósfera, p. ej. "moody cinematic illustration, warm amber and deep teal palette, soft film grain"), texto, escena_visual, en_escena, personajes_nuevos [{nombre, rol, aspecto_visual}], hechos, resumen, opciones.`}
+ else{
+  let dd="";if(extra.dado)dd=`\nDADO DE EMERGENCIA (tirada ${extra.dado.n}/20, ${extra.dado.tipo}): ${extra.dado.txt} Intégralo con naturalidad, sin mencionar el dado.`;
+  prompt=`BIBLIA:\n${bibleText()}\n\n${memoryText()}\n\nAJUSTES PARA ESTE TROZO: ${paramText(p)}\nFidelidad al canon: ${band(p.canon,SL[5].t)}.\nPERSONA: ${pov}. LONGITUD: unas ${target} palabras.${dir?`\nDIRECCIÓN DEL AUTOR (obligatoria): ${dir}`:""}${dd}\nDevuelve JSON con: texto, escena_visual, en_escena, personajes_nuevos [{nombre, rol, aspecto_visual}], hechos, resumen, opciones.`}
+ setBusy(true);
+ const seg={id:uid(),kind:extra.dado?"dado":"cont",dado:extra.dado||null,dir:dir};
+ try{
+  const j=await aiJSON(SYS,prompt,temp,starting&&S.hasImage&&imgData?[imgData]:null);
+  if(starting){S.title=String(j.titulo||"Relato sin título");S.style=String(j.estilo_visual||"cinematic illustration, warm amber palette, soft film grain");seg.kind="inicio";S.start=true}
+  applyResult(j,seg);S.segs.push(seg);$("dir").value="";save();renderAll(true);
+ }catch(e){showErr(e.message)}
+ setBusy(false);$("goBtn").textContent="➕ Continuar"}
+async function redo(id){ // variante del último trozo
+ if(busy)return;const i=S.segs.findIndex(s=>s.id===id);if(i!==S.segs.length-1)return;const old=S.segs.pop();
+ S.bible.facts=S.bible.facts.filter(f=>!(old.hechosAdd||[]).includes(f));
+ const keepDir=old.dir;$("dir").value=keepDir||"";renderAll();
+ if(old.kind==="inicio"){S.segs=[];S.bible.chars=[];S.bible.facts=[];}
+ await step(old.dado?{dado:old.dado}:{})}
+
+/* ---------- imágenes ---------- */
+function imgPrompt(seg){
+ const cs=(seg.enScena||[]).map(n=>S.bible.chars.find(c=>c.nombre.toLowerCase()===String(n).toLowerCase())).filter(Boolean).map(c=>c.aspecto).filter(Boolean);
+ return clip(`${seg.escena||clip(seg.text,200)}. Characters: ${cs.join("; ")||"none"}. Style: ${S.style}. Consistent character design, same art style throughout the series, no text, no watermark`,900)}
+async function toDataURL(blob,maxW){return new Promise(res=>{const u=URL.createObjectURL(blob),im=new Image();im.onload=()=>{const k=Math.min(1,maxW/im.width),c=document.createElement("canvas");c.width=im.width*k;c.height=im.height*k;c.getContext("2d").drawImage(im,0,0,c.width,c.height);URL.revokeObjectURL(u);res(c.toDataURL("image/jpeg",.85))};im.onerror=()=>{URL.revokeObjectURL(u);res(null)};im.src=u})}
+async function illustrate(id,vary){
+ const seg=S.segs.find(s=>s.id===id);if(!seg||seg.loadingImg)return;seg.loadingImg=true;renderAll();
+ const seed=S.seed+(vary?(seg.imgVar=(seg.imgVar||0)+1)*17:(seg.imgVar||0)*17);
+ const url="https://image.pollinations.ai/prompt/"+encodeURIComponent(imgPrompt(seg))+`?width=1024&height=576&seed=${seed}&nologo=true&model=flux&safe=true`;
+ let ok=false,msg="";
+ for(let a=0;a<2&&!ok;a++){try{const ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),90000);const r=await fetch(url,{signal:ctrl.signal});clearTimeout(tm);
+   if(!r.ok){msg=r.status===429?"El generador gratuito de imágenes está saturado. Prueba en un minuto.":"El generador de imágenes respondió con error "+r.status;await new Promise(r=>setTimeout(r,1500));continue}
+   const b=await r.blob();if(!/image/.test(b.type)){msg="Respuesta no válida del generador de imágenes";continue}
+   const d=await toDataURL(b,1024);if(!d){msg="No se pudo leer la imagen";continue}
+   seg.imgId=seg.imgId||("im-"+seg.id);IMGC[seg.imgId]=d;await imgPut(seg.imgId,d);ok=true}catch(e){msg=e.name==="AbortError"?"La imagen tardó demasiado. Reintenta.":"No se pudo contactar con el generador de imágenes."}}
+ seg.loadingImg=false;if(!ok)showErr(msg);save();renderAll()}
+
+/* ---------- render ---------- */
+function segHTML(s,i,last){
+ const tag=s.kind==="dado"?`🎲 Dado ${s.dado.n} · ${s.dado.tipo}`:(s.kind==="inicio"?"Comienzo":"Trozo "+(i+1));
+ const img=s.loadingImg?`<div class="ph">Pintando la escena…</div>`:(s.imgId&&IMGC[s.imgId]?`<img src="${IMGC[s.imgId]}" alt="${esc(clip(s.escena,120))}">`:"");
+ return `<div class="seg ${s.kind==="dado"?"dado":""}" data-id="${s.id}"><div class="tag">${tag}</div><div class="txt" data-t="${s.id}">${esc(s.text)}</div>${img}
+ <div class="tools"><button class="ghost sm" data-a="img">${s.imgId?"🖼 Otra imagen":"🖼 Ilustrar"}</button>${s.imgId?`<button class="ghost sm" data-a="img2">Misma escena, otra semilla</button>`:""}<button class="ghost sm" data-a="edit">✏️ Editar</button>${last?`<button class="ghost sm" data-a="redo">↻ Otra versión</button><button class="ghost sm" data-a="del">🗑</button>`:""}</div></div>`}
+function renderAll(anim){
+ renderRoster();$("start").classList.toggle("hid",!!S&&S.segs.length>0);$("params").classList.remove("hid");
+ const has=S&&S.segs.length>0;$("story").classList.toggle("hid",!has);$("dieBtn").classList.toggle("hid",!has);
+ $("goBtn").textContent=busy?"Tejiendo…":(has?"➕ Continuar":"✨ Empezar relato");
+ renderRoster();
+ if(!has)return;
+ $("stTitle").textContent=S.title;$("stMeta").textContent=`${S.segs.length} trozos · ${S.segs.reduce((n,s)=>n+s.text.split(/\s+/).filter(Boolean).length,0)} palabras${S.provLast?" · último con "+S.provLast:""}`;
+ $("segs").innerHTML=S.segs.map((s,i)=>segHTML(s,i,i===S.segs.length-1)).join("");
+ const l=S.segs[S.segs.length-1];$("opts").innerHTML=l.opciones&&l.opciones.length?`<div class="card"><h2>Caminos posibles</h2><div class="mut">Toca uno para dirigir el siguiente trozo.</div>${l.opciones.map(o=>`<button class="opt" data-o="${esc(o)}">${esc(o)}</button>`).join("")}</div>`:"";
+ $("styleTxt").value=S.style||"";
+ $("chars").innerHTML=S.bible.chars.map((c,i)=>`<div class="char"><b>${esc(c.nombre)}</b> <span class="mut">${esc(c.rol||"")}</span><textarea data-c="${i}" placeholder="Aspecto visual en inglés">${esc(c.aspecto)}</textarea></div>`).join("");
+ $("facts").innerHTML=S.bible.facts.length?S.bible.facts.map(f=>"· "+esc(f)).join("<br>"):"(se irán añadiendo)";
+ if(anim){const t=document.querySelector(`[data-t="${l.id}"]`);if(t){const w=l.text.split(/(\s+)/);t.textContent="";let n=0;const iv=setInterval(()=>{n+=2;t.textContent=w.slice(0,n).join("");if(n>=w.length){clearInterval(iv);t.textContent=l.text}},16);t.closest(".seg").scrollIntoView({behavior:"smooth",block:"start"})}}}
+$("segs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const id=b.closest(".seg").dataset.id,a=b.dataset.a;
+ if(a==="img")illustrate(id,!!S.segs.find(s=>s.id===id).imgId);
+ else if(a==="img2")illustrate(id,true);
+ else if(a==="redo")redo(id);
+ else if(a==="del"){if(S.segs.length<=1)return toast("Usa «Empezar otro relato»");S.segs.pop();save();renderAll()}
+ else if(a==="edit"){const t=document.querySelector(`[data-t="${id}"]`);if(t.isContentEditable){t.contentEditable="false";const s=S.segs.find(x=>x.id===id);s.text=t.innerText.trim();save();b.textContent="✏️ Editar";toast("Cambio guardado. La IA lo tendrá en cuenta.")}else{t.contentEditable="true";t.focus();b.textContent="💾 Guardar"}}});
+$("opts").addEventListener("click",e=>{const b=e.target.closest(".opt");if(b){$("dir").value=b.dataset.o;$("dir").scrollIntoView({behavior:"smooth",block:"center"});toast("Dirección fijada. Pulsa Continuar.")}});
+$("styleTxt").oninput=()=>{S.style=$("styleTxt").value;save()};
+$("chars").addEventListener("input",e=>{const i=e.target.dataset.c;if(i!=null){S.bible.chars[i].aspecto=e.target.value;save();const rr=rfind(S.bible.chars[i].nombre);if(rr){rr.aspecto=e.target.value;rsave()}}});
+$("addChar").onclick=()=>{const n=prompt("Nombre del personaje");if(!n)return;S.bible.chars.push({nombre:n,rol:"",aspecto:""});save();renderAll()};
+$("newSeed").onclick=()=>{S.seed=Math.floor(Math.random()*1e6);save();toast("Nueva semilla. Las próximas imágenes cambiarán de aspecto.")};
+
+/* ---------- inicio ---------- */
+$("imgPick").onclick=()=>$("imgFile").click();
+$("imgFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;const d=await toDataURL(f,768);if(!d)return toast("No se pudo leer la imagen");imgData={mime:"image/jpeg",data:d.split(",")[1]};$("imgPrevImg").src=d;$("imgPrev").classList.remove("hid")};
+$("imgClear").onclick=e=>{e.preventDefault();imgData=null;$("imgFile").value="";$("imgPrev").classList.add("hid")};
+function newStory(){S={v:1,title:"",premise:($("premise").value||"").trim(),hasImage:!!imgData,genres:getGenres(),params:getParams(),style:"",seed:Math.floor(Math.random()*1e6),bible:{chars:[...document.querySelectorAll('#rChips .chip.on')].map(b=>ROSTER.find(r=>r.id===b.dataset.rid)).filter(Boolean).map(r=>({nombre:r.nombre,rol:r.rol,aspecto:r.aspecto})),facts:[]},segs:[]};}
+$("goBtn").onclick=async()=>{if(busy)return;
+ if(!S||!S.segs.length){const pr=($("premise").value||"").trim();if(!pr&&!imgData)return toast("Escribe una frase o elige una imagen");newStory();await step();if(!S.segs.length){S=null}else{S.cover=imgData?"x":""}}
+ else await step()};
+$("dieBtn").onclick=rollDie;
+
+/* ---------- exportar ---------- */
+const slug=()=>(S.title||"relato").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"relato";
+function dl(name,mime,data){const b=new Blob([data],{type:mime}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function mdOut(){let o=`# ${S.title}\n\n`;S.segs.forEach(s=>{if(s.kind==="dado")o+=`> 🎲 Dado ${s.dado.n}: ${s.dado.tipo}\n\n`;o+=s.text+"\n\n";if(s.imgId&&IMGC[s.imgId])o+=`*[Ilustración: ${s.escena||""}]*\n\n`});o+=`---\n## Biblia\n\n**Estilo visual:** ${S.style}\n\n`;S.bible.chars.forEach(c=>o+=`- **${c.nombre}**${c.rol?" ("+c.rol+")":""}: ${c.aspecto}\n`);return o}
+function htmlOut(){const css=`body{font:18px/1.7 Georgia,serif;max-width:720px;margin:32px auto;padding:0 18px;color:#1d1a16}h1{font-family:Arial,sans-serif;border-bottom:3px solid #ffb000;padding-bottom:8px}p.d{font:14px Arial;color:#b04030;border-left:3px solid #ff6b5b;padding-left:8px}img{width:100%;border-radius:8px;margin:10px 0;break-inside:avoid}p{white-space:pre-wrap}.f{font:12px Arial;color:#777;margin-top:30px}@page{size:A4;margin:18mm}`;
+ return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(S.title)}</title><style>${css}</style></head><body><h1>${esc(S.title)}</h1>`+S.segs.map(s=>(s.kind==="dado"?`<p class="d">🎲 Dado ${s.dado.n} · ${esc(s.dado.tipo)}</p>`:"")+`<p>${esc(s.text)}</p>`+(s.imgId&&IMGC[s.imgId]?`<img src="${IMGC[s.imgId]}" alt="">`:"")).join("")+`<div class="f">Creado con Hilván · xesco-tejedor.github.io/Hilvan</div></body></html>`}
+async function jsonOut(){const o=JSON.parse(JSON.stringify(S));o.roster=ROSTER;o.images={};for(const s of S.segs)if(s.imgId&&IMGC[s.imgId])o.images[s.imgId]=IMGC[s.imgId];return JSON.stringify(o)}
+document.querySelector("details:has([data-x])").addEventListener("click",async e=>{const b=e.target.closest("[data-x]");if(!b||!S)return;const x=b.dataset.x;
+ if(x==="md")dl(slug()+".md","text/markdown",mdOut());
+ else if(x==="html")dl(slug()+".html","text/html",htmlOut());
+ else if(x==="json")dl(slug()+".json","application/json",await jsonOut());
+ else if(x==="pdf"){const w=window.open("","_blank");if(!w)return toast("Permite ventanas emergentes para imprimir");w.document.write(htmlOut());w.document.close();setTimeout(()=>w.print(),600)}});
+$("impBtn").onclick=()=>$("impFile").click();
+$("impFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const o=JSON.parse(await f.text());if(!o.segs||!o.bible)throw 0;const im=o.images||{};delete o.images;(o.roster||[]).forEach(r=>{if(!rfind(r.nombre))ROSTER.push(r)});rsave();delete o.roster;for(const k in im){IMGC[k]=im[k];await imgPut(k,im[k])}S=o;save();buildSliders();renderAll();renderRoster();toast("Relato importado")}catch{toast("Archivo no válido")}};
+$("reset").onclick=()=>{if(!confirm("¿Empezar otro relato? El actual se borra de este navegador (exporta antes si quieres conservarlo)."))return;S=null;localStorage.removeItem(LS);imgData=null;$("premise").value="";$("imgPrev").classList.add("hid");buildGenres();buildSliders();showErr("");renderAll();scrollTo({top:0,behavior:"smooth"})};
+
+/* ---------- arranque ---------- */
+(async function init(){try{S=JSON.parse(localStorage.getItem(LS)||"null")}catch{S=null}
+ if(S&&S.segs&&S.segs.length){for(const s of S.segs)if(s.imgId)IMGC[s.imgId]=await imgGet(s.imgId);if(S.len)$("len").value=S.len;if(S.pov)$("pov").value=S.pov}else S=null;
+ buildSliders();buildGenres(S&&S.genres);qshow();renderAll()})();
+</script>
+</body>
+</html>
