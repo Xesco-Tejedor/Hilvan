@@ -53,6 +53,8 @@ input[type=range]{width:100%;accent-color:var(--amber);height:34px}
 .seg .txt[contenteditable=true]{outline:2px dashed var(--amber);padding:6px;border-radius:8px}
 .seg img{width:100%;height:auto;border-radius:12px;margin-top:12px;border:1px solid var(--line);display:block;animation:rise .6s both}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
+@keyframes pulse{0%,100%{box-shadow:0 0 0 0 rgba(255,107,91,.55)}50%{box-shadow:0 0 0 9px rgba(255,107,91,0)}}
+button.rec{border-color:var(--bad)!important;color:var(--bad)!important;animation:pulse 1.6s infinite}
 .ph{height:120px;border-radius:12px;margin-top:12px;border:1px dashed var(--amber);display:flex;align-items:center;justify-content:center;color:var(--soft);background:linear-gradient(110deg,#1b1610 30%,#2b2218 50%,#1b1610 70%);background-size:200% 100%;animation:shim 1.4s linear infinite}
 @keyframes shim{to{background-position:-200% 0}}
 .bar{position:fixed;left:0;right:0;bottom:0;z-index:20;padding:10px 12px calc(10px + env(safe-area-inset-bottom));background:linear-gradient(180deg,rgba(22,19,15,0),rgba(22,19,15,.96) 28%);backdrop-filter:blur(6px)}
@@ -95,6 +97,7 @@ a{color:var(--soft)}
     <textarea id="premise" placeholder="Una frase para empezar… («El faro llevaba siete años apagado, pero esa noche alguien subió a encenderlo»)"></textarea>
     <div class="row" style="margin-top:10px">
       <button class="ghost" id="imgPick">📷 O parte de una imagen</button>
+      <button class="ghost" id="micBtn">🎙 Dictar</button>
       <input type="file" id="imgFile" accept="image/*" class="hid">
     </div>
     <div id="imgPrev" class="hid" style="margin-top:10px"><img id="imgPrevImg" style="width:100%;max-height:220px;object-fit:cover;border-radius:12px;border:1px solid var(--line)"><div class="mut" style="margin-top:6px">La IA mirará la imagen y la usará como semilla (solo Gemini lee imágenes). <a href="#" id="imgClear">Quitar</a></div></div>
@@ -154,7 +157,7 @@ a{color:var(--soft)}
     <div class="mut" style="color:var(--text)" id="quota"></div>
     <div class="row" style="margin-top:10px"><div><div class="mut">Proveedor de texto</div><select id="prov"><option value="auto">Automático (Gemini, luego OpenRouter)</option><option value="gemini">Solo Gemini</option><option value="openrouter">Solo OpenRouter (gratis)</option></select></div></div>
     <div class="mut" style="margin-top:10px">Todo usa niveles gratuitos. OpenRouter permite 50 peticiones al día en total, compartidas con Forja de Mundos y TreaSeek. Gemini gratuito también tiene tope y a veces se satura. Cada trozo gasta 1 petición.</div>
-    <div class="mut" style="margin-top:8px"><b style="color:var(--soft)">Sobre las imágenes:</b> se generan con Pollinations (gratis, sin clave) y no con tu cuota de texto. Mantienen la continuidad fijando una semilla, un estilo común y el aspecto de cada personaje en cada imagen. Eso acerca mucho los rostros, la ropa y la paleta, pero no garantiza que sea exactamente la misma persona en todas. Si una imagen se desvía, regenérala o ajusta la descripción en la biblia. El texto de la escena se envía a un servicio externo.</div>
+    <div class="mut" style="margin-top:8px"><b style="color:var(--soft)">Voz:</b> 🎙 Dictar pasa tu voz a texto en la frase inicial. Usa el reconocimiento del navegador (Chrome envía el audio a sus servidores para transcribirlo; la app no guarda grabaciones). 🔊 Escuchar lee cada trozo en voz alta con las voces de tu dispositivo. Si el navegador no admite alguna de las dos, su botón no aparece.<br><br><b style="color:var(--soft)">Sobre las imágenes:</b> se generan con Pollinations (gratis, sin clave) y no con tu cuota de texto. Mantienen la continuidad fijando una semilla, un estilo común y el aspecto de cada personaje en cada imagen. Eso acerca mucho los rostros, la ropa y la paleta, pero no garantiza que sea exactamente la misma persona en todas. Si una imagen se desvía, regenérala o ajusta la descripción en la biblia. El texto de la escena se envía a un servicio externo.</div>
   </section>
 </div>
 
@@ -340,9 +343,9 @@ function segHTML(s,i,last){
  const tag=s.kind==="dado"?`🎲 Dado ${s.dado.n} · ${s.dado.tipo}`:(s.kind==="inicio"?"Comienzo":"Trozo "+(i+1));
  const img=s.loadingImg?`<div class="ph">Pintando la escena…</div>`:(s.imgId&&IMGC[s.imgId]?`<img src="${IMGC[s.imgId]}" alt="${esc(clip(s.escena,120))}">`:"");
  return `<div class="seg ${s.kind==="dado"?"dado":""}" data-id="${s.id}"><div class="tag">${tag}</div><div class="txt" data-t="${s.id}">${esc(s.text)}</div>${img}
- <div class="tools"><button class="ghost sm" data-a="img">${s.imgId?"🖼 Otra imagen":"🖼 Ilustrar"}</button>${s.imgId?`<button class="ghost sm" data-a="img2">Misma escena, otra semilla</button>`:""}<button class="ghost sm" data-a="edit">✏️ Editar</button>${last?`<button class="ghost sm" data-a="redo">↻ Otra versión</button><button class="ghost sm" data-a="del">🗑</button>`:""}</div></div>`}
+ <div class="tools">${SYN?`<button class="ghost sm" data-a="listen">${speakId===s.id?"⏹ Detener":"🔊 Escuchar"}</button>`:""}<button class="ghost sm" data-a="img">${s.imgId?"🖼 Otra imagen":"🖼 Ilustrar"}</button>${s.imgId?`<button class="ghost sm" data-a="img2">Misma escena, otra semilla</button>`:""}<button class="ghost sm" data-a="edit">✏️ Editar</button>${last?`<button class="ghost sm" data-a="redo">↻ Otra versión</button><button class="ghost sm" data-a="del">🗑</button>`:""}</div></div>`}
 function renderAll(anim){
- renderRoster();$("start").classList.toggle("hid",!!S&&S.segs.length>0);$("params").classList.remove("hid");
+ stopSpeak();renderRoster();$("start").classList.toggle("hid",!!S&&S.segs.length>0);$("params").classList.remove("hid");
  const has=S&&S.segs.length>0;$("story").classList.toggle("hid",!has);$("dieBtn").classList.toggle("hid",!has);$("newBtn").classList.toggle("hid",!has);
  $("goBtn").textContent=busy?"Tejiendo…":(has?"➕ Continuar":"✨ Empezar relato");
  renderRoster();
@@ -357,6 +360,7 @@ function renderAll(anim){
 $("segs").addEventListener("click",e=>{const b=e.target.closest("button");if(!b)return;const id=b.closest(".seg").dataset.id,a=b.dataset.a;
  if(a==="img")illustrate(id,!!S.segs.find(s=>s.id===id).imgId);
  else if(a==="img2")illustrate(id,true);
+ else if(a==="listen")speakSeg(id,b);
  else if(a==="redo")redo(id);
  else if(a==="del"){if(S.segs.length<=1)return toast("Usa «Empezar otro relato»");S.segs.pop();save();renderAll()}
  else if(a==="edit"){const t=document.querySelector(`[data-t="${id}"]`);if(t.isContentEditable){t.contentEditable="false";const s=S.segs.find(x=>x.id===id);s.text=t.innerText.trim();save();b.textContent="✏️ Editar";toast("Cambio guardado. La IA lo tendrá en cuenta.")}else{t.contentEditable="true";t.focus();b.textContent="💾 Guardar"}}});
@@ -375,6 +379,32 @@ $("goBtn").onclick=async()=>{if(busy)return;
  if(!S||!S.segs.length){const pr=($("premise").value||"").trim();if(!pr&&!imgData)return toast("Escribe una frase o elige una imagen");newStory();await step();if(!S.segs.length){S=null}else{S.cover=imgData?"x":""}}
  else await step()};
 $("dieBtn").onclick=rollDie;
+
+/* ---------- voz: dictado (Web Speech, Chrome) ---------- */
+const SRc=window.SpeechRecognition||window.webkitSpeechRecognition;
+let rec=null,recOn=false;
+(function(){const b=$("micBtn");if(!SRc){b.classList.add("hid");return}
+ b.onclick=()=>{if(recOn){try{rec.stop()}catch{}return}
+  rec=new SRc();rec.lang="es-ES";rec.interimResults=false;rec.continuous=true;recOn=true;b.classList.add("rec");b.textContent="⏹ Escuchando… toca para parar";
+  rec.onresult=e=>{let t="";for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)t+=e.results[i][0].transcript;t=t.trim();if(t){const p=$("premise");p.value=(p.value.trim()?p.value.trim()+" ":"")+t}};
+  rec.onerror=e=>{if(e.error==="not-allowed"||e.error==="service-not-allowed")toast("El navegador no deja usar el micrófono. Revisa el permiso de la página.");else if(e.error==="no-speech")toast("No he oído nada. Prueba de nuevo.");else if(e.error!=="aborted")toast("Dictado: "+e.error)};
+  rec.onend=()=>{recOn=false;b.classList.remove("rec");b.textContent="🎙 Dictar"};
+  try{rec.start()}catch(e){recOn=false;b.classList.remove("rec");b.textContent="🎙 Dictar";toast("No se pudo iniciar el dictado")}}})();
+
+/* ---------- voz: lectura de fragmentos ---------- */
+const SYN="speechSynthesis" in window?window.speechSynthesis:null;
+let speakId=null,vozEs=null;
+function pickVoice(){if(!SYN)return;const vs=SYN.getVoices();vozEs=vs.find(v=>/^es[-_]es/i.test(v.lang))||vs.find(v=>/^es/i.test(v.lang))||null}
+if(SYN){pickVoice();SYN.onvoiceschanged=pickVoice}
+function stopSpeak(){if(SYN)SYN.cancel();speakId=null;document.querySelectorAll('[data-a="listen"]').forEach(b=>b.textContent="🔊 Escuchar")}
+function speakSeg(id,btn){if(!SYN)return;
+ if(speakId===id){stopSpeak();return}
+ stopSpeak();const s=S&&S.segs.find(x=>x.id===id);if(!s)return;
+ const txt=s.text.replace(/\s+/g," ").trim();if(!txt)return;
+ speakId=id;btn.textContent="⏹ Detener";
+ const parts=[];txt.split(/(?<=[.!?…"»])\s+/).forEach(fr=>{if(fr.length<=240)parts.push(fr);else{for(let i=0;i<fr.length;i+=240)parts.push(fr.slice(i,i+240))}});
+ let n=0;for(const p of parts){const u=new SpeechSynthesisUtterance(p);u.lang="es-ES";if(vozEs)u.voice=vozEs;u.rate=1;if(++n===parts.length)u.onend=()=>{if(speakId===id){speakId=null;btn.textContent="🔊 Escuchar"}};SYN.speak(u)}}
+addEventListener("pagehide",stopSpeak);
 
 /* ---------- exportar ---------- */
 const slug=()=>(S.title||"relato").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"relato";
