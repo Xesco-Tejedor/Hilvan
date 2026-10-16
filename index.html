@@ -195,13 +195,13 @@ async function imgPut(k,v){try{const d=await idbOpen();return new Promise(r=>{co
 async function imgGet(k){try{const d=await idbOpen();return new Promise(r=>{const q=d.transaction("i").objectStore("i").get(k);q.onsuccess=()=>r(q.result||null);q.onerror=()=>r(null)})}catch{return null}}
 let S=null; // estado del relato
 const IMGC={}; // caché imágenes
-const save=()=>{try{localStorage.setItem(LS,JSON.stringify(S))}catch(e){toast("No se pudo guardar en el navegador")}};
+const save=()=>{const d=JSON.stringify(S),t=Date.now();try{localStorage.setItem(LS,d);localStorage.setItem(LS+"-t",String(t))}catch(e){toast("No se pudo guardar en el navegador")}try{if(NAV&&NAV.guardarEstado)NAV.guardarEstado(LS,JSON.stringify({t:t,d:d}))}catch(e){}};
 
 
 /* ---------- reparto persistente ---------- */
 const RL="hilvan-roster";
 let ROSTER=[];try{ROSTER=JSON.parse(localStorage.getItem(RL)||"[]")}catch{ROSTER=[]}
-const rsave=()=>{try{localStorage.setItem(RL,JSON.stringify(ROSTER))}catch{toast("No se pudo guardar el reparto")}};
+const rsave=()=>{const d=JSON.stringify(ROSTER),t=Date.now();try{localStorage.setItem(RL,d);localStorage.setItem(RL+"-t",String(t))}catch{toast("No se pudo guardar el reparto")}try{if(NAV&&NAV.guardarEstado)NAV.guardarEstado(RL,JSON.stringify({t:t,d:d}))}catch(e){}};
 const rfind=n=>ROSTER.find(r=>r.nombre.toLowerCase()===String(n).toLowerCase());
 function rupsert(c,from){const ex=rfind(c.nombre);if(ex){if(!ex.aspecto&&c.aspecto)ex.aspecto=c.aspecto;if(!ex.rol&&c.rol)ex.rol=c.rol}else ROSTER.push({id:uid(),nombre:c.nombre,rol:c.rol||"",aspecto:c.aspecto||"",notas:"",de:from||""});rsave()}
 function renderRoster(){
@@ -453,12 +453,17 @@ document.querySelector("details:has([data-x])").addEventListener("click",async e
  else if(x==="pdf"){if(NAV&&NAV.imprimir){NAV.imprimir(S.title||"relato",htmlOut());return}const w=window.open("","_blank");if(!w)return toast("Permite ventanas emergentes para imprimir");w.document.write(htmlOut());w.document.close();setTimeout(()=>w.print(),600)}});
 $("impBtn").onclick=()=>$("impFile").click();
 $("impFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const o=JSON.parse(await f.text());if(!o.segs||!o.bible)throw 0;const im=o.images||{};delete o.images;(o.roster||[]).forEach(r=>{if(!rfind(r.nombre))ROSTER.push(r)});rsave();delete o.roster;for(const k in im){IMGC[k]=im[k];await imgPut(k,im[k])}S=o;save();buildSliders();renderAll();renderRoster();toast("Relato importado")}catch{toast("Archivo no válido")}};
-function resetStory(){if(busy)return;if(!confirm("¿Empezar otro relato? El actual se borra de este navegador (exporta antes si quieres conservarlo)."))return;S=null;localStorage.removeItem(LS);imgData=null;$("premise").value="";$("imgFile").value="";$("imgPrev").classList.add("hid");buildGenres();buildSliders();showErr("");renderAll();scrollTo({top:0,behavior:"smooth"})}
+function resetStory(){if(busy)return;if(!confirm("¿Empezar otro relato? El actual se borra de este navegador (exporta antes si quieres conservarlo)."))return;S=null;localStorage.removeItem(LS);localStorage.removeItem(LS+"-t");try{if(NAV&&NAV.borrarEstado)NAV.borrarEstado(LS)}catch(e){}imgData=null;$("premise").value="";$("imgFile").value="";$("imgPrev").classList.add("hid");buildGenres();buildSliders();showErr("");renderAll();scrollTo({top:0,behavior:"smooth"})}
 $("reset").onclick=resetStory;
 $("newBtn").onclick=resetStory;
 
 /* ---------- arranque ---------- */
-(async function init(){try{S=JSON.parse(localStorage.getItem(LS)||"null")}catch{S=null}
+function espejoLeer(clave){try{if(!(NAV&&NAV.leerEstado))return null;const o=JSON.parse(NAV.leerEstado(clave)||"null");return o&&typeof o.d==="string"&&typeof o.t==="number"?o:null}catch{return null}}
+function copiaMasNueva(clave){let local=null,tl=0;try{local=localStorage.getItem(clave);tl=parseInt(localStorage.getItem(clave+"-t")||"0",10)||0}catch{}const e=espejoLeer(clave);if(e&&e.t>tl)return{d:e.d,t:e.t,de:"espejo"};return{d:local,t:tl,de:"local"}}
+(async function init(){
+ const pr=copiaMasNueva(RL);if(pr.d&&pr.de==="espejo"){try{ROSTER=JSON.parse(pr.d)||ROSTER;localStorage.setItem(RL,pr.d);localStorage.setItem(RL+"-t",String(pr.t))}catch{}}
+ const ps=copiaMasNueva(LS);try{S=JSON.parse(ps.d||"null")}catch{S=null}
+ if(ps.d&&ps.de==="espejo"){try{localStorage.setItem(LS,ps.d);localStorage.setItem(LS+"-t",String(ps.t))}catch{}setTimeout(()=>toast("Relato recuperado de la copia de seguridad del teléfono"),800)}
  if(S&&S.segs&&S.segs.length){for(const s of S.segs)if(s.imgId)IMGC[s.imgId]=await imgGet(s.imgId);if(S.len)$("len").value=S.len;if(S.pov)$("pov").value=S.pov}else S=null;
  buildSliders();buildGenres(S&&S.genres);qshow();renderAll()})();
 </script>
