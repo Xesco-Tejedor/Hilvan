@@ -49,13 +49,21 @@ adb shell am force-stop $PKG; sleep 2
 start_app; sleep 8
 node_e2e get
 
-log "== Sin conexion (modo avion + wifi y datos apagados)"
+log "== Sin conexion CON cache (modo avion): la web debe abrir desde la copia guardada"
 adb shell cmd connectivity airplane-mode enable; adb shell svc wifi disable; adb shell svc data disable; sleep 4
 adb shell am force-stop $PKG; start_app; sleep 9
-adb exec-out screencap -p > "$EV/11-sin-red.png"
+adb exec-out screencap -p > "$EV/11-sin-red-cache.png"
+node_e2e offline
+adb shell cmd connectivity airplane-mode disable; adb shell svc wifi enable; adb shell svc data enable; sleep 5
+
+log "== Sin conexion SIN cache (pm clear, como una primera instalacion offline): vista de error con Reintentar"
+adb shell pm clear $PKG >/dev/null
+adb shell cmd connectivity airplane-mode enable; adb shell svc wifi disable; adb shell svc data disable; sleep 4
+adb shell am start -W -n $PKG/.MainActivity >/dev/null 2>&1; sleep 10
+adb exec-out screencap -p > "$EV/12-sin-red-error.png"
 adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
 adb shell cat /sdcard/ui.xml > "$EV/ui-sin-red.xml" 2>/dev/null
-log "sin red: vista de error visible (Reintentar): $(grep -c 'Reintentar' "$EV/ui-sin-red.xml" 2>/dev/null || echo 0)"
+log "sin red sin cache: vista de error visible (Reintentar): $(grep -c 'Reintentar' "$EV/ui-sin-red.xml" 2>/dev/null || echo 0)"
 adb shell cmd connectivity airplane-mode disable; adb shell svc wifi enable; adb shell svc data enable; sleep 5
 log "== Red recuperada: reabre y carga"
 adb shell am force-stop $PKG; start_app; sleep 8
@@ -93,7 +101,8 @@ chk 'exportacion: hilvan-e2e-prueba.txt' 'archivo exportado en Descargas'
 chk 'exportacion contenido: contenido e2e Hilv' 'contenido exportado correcto'
 chk 'foco tras imprimir: .*[Pp]rint' 'vista de impresion del sistema abierta'
 chk 'persistencia: marcador tras reinicio sobrevive-' 'persistencia tras cierre completo'
-chk 'sin red: vista de error visible \(Reintentar\): [1-9]' 'vista sin conexion con Reintentar'
+chk 'sin red: app renderiza desde cache true' 'sin conexion: abre desde cache'
+chk 'sin red sin cache: vista de error visible \(Reintentar\): [1-9]' 'sin conexion sin cache: vista Reintentar'
 chk 'red recuperada: titulo Hilv' 'recarga al volver la red'
 chk 'pid release(tras reintento)?=[0-9]+' 'release firmada publicada abre'
 chk 'excepciones JS en pagina: 0$' 'sin excepciones de script en la pagina'
