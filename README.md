@@ -11,6 +11,7 @@ Aplicación de escritura narrativa asistida por IA. Parte de una frase o una ima
 - Ajustar seis controles: azar creativo, giros de trama, tono, ritmo, descripción y fidelidad al canon.
 - Continuar con una indicación propia o uno de los caminos propuestos.
 - Usar un dado de emergencia de 20 caras para introducir una variación.
+- Empezar un relato nuevo con el botón **Nuevo** de la barra inferior, que pide confirmación para no perder el actual.
 - Editar fragmentos y pedir otra versión del último.
 - Mantener un reparto reutilizable y una biblia de personajes y hechos.
 - Ilustrar escenas y exportar el relato a HTML, PDF mediante impresión, Markdown o JSON.
@@ -24,7 +25,7 @@ Aplicación de escritura narrativa asistida por IA. Parte de una frase o una ima
 5. Si quieres romper una situación estancada, usa el dado de emergencia. La tirada provoca una nueva intervención narrativa.
 6. Revisa la biblia y el aspecto de los personajes. El reparto queda disponible para otros relatos en ese navegador.
 7. Pulsa **Ilustrar** en un fragmento para pedir una imagen. Puedes regenerarla o cambiar su semilla visual.
-8. Exporta antes de pulsar **Empezar otro relato**: esa acción elimina el relato actual de ese navegador, aunque mantiene el reparto.
+8. Exporta antes de empezar otro relato: pulsa **🌱 Nuevo** en la barra inferior (o **Empezar otro relato** al final de la página) y confirma. Esa acción elimina el relato actual de ese navegador, aunque mantiene el reparto.
 
 ## Exportación y recuperación
 
