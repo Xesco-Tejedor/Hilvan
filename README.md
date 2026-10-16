@@ -55,6 +55,17 @@ El relato actual y el reparto se guardan en el navegador; las imágenes usan Ind
 
 La IA puede introducir contradicciones o resultados poco adecuados. La fidelidad al canon y la continuidad visual son objetivos de generación, no garantías. Revisa y edita el resultado; si una ilustración cambia demasiado un personaje, ajusta su descripción o regenérala.
 
+## Aplicación Android
+
+Hilván tiene una app Android instalable (APK): [descargar hilvan.apk](https://github.com/Xesco-Tejedor/Hilvan/releases/download/android-latest/hilvan.apk) desde la [página de la release](https://github.com/Xesco-Tejedor/Hilvan/releases/tag/android-latest).
+
+- Instalación directa: Android pedirá permitir «orígenes desconocidos» la primera vez. No se publica en Google Play.
+- Es la misma aplicación web dentro de un visor propio con icono: el relato, el reparto y los ajustes se guardan en la app, independientes del navegador.
+- Necesita internet para generar texto e imágenes, igual que la web. Sin conexión muestra una pantalla de reintento; el relato guardado se conserva.
+- El dictado y la lectura en voz alta usan los servicios de voz del teléfono; el micrófono solo se activa al pulsar Dictar y aceptar el permiso, y no se guardan grabaciones. La calidad de la voz depende de las voces instaladas en el teléfono.
+- Las exportaciones se guardan en la carpeta Descargas; el PDF se genera desde el diálogo de impresión de Android (elige «Guardar como PDF»).
+- Requiere Android 7 o superior.
+
 ## Ejecutarla en local
 
 La interfaz es una página HTML con CSS y JavaScript, sin paso de compilación:
