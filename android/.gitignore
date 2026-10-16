@@ -1,0 +1,11 @@
+# Secretos y locales: NUNCA subir
+hilvan.keystore
+keystore.properties
+local.properties
+*.jks
+*.keystore
+# Salidas de compilacion
+build/
+.gradle/
+*.apk
+*.aab
