@@ -1,0 +1,32 @@
+name: Publicar Android
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+jobs:
+  publicar:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - name: Decodificar y verificar el artefacto
+        run: |
+          cat apk.b64.00 apk.b64.01 apk.b64.02 apk.b64.03 | base64 -d > /tmp/h.tar.gz
+          echo "5254e7dcb1cf6658f5b8a99cf6efba9b98e2a0da58c9891523b5bf67627c3169  /tmp/h.tar.gz" | sha256sum -c -
+          mkdir -p /tmp/h && tar xzf /tmp/h.tar.gz -C /tmp/h
+      - name: Commit de las fuentes Android y limpieza del artefacto
+        run: |
+          rm -f apk.b64.00 apk.b64.01 apk.b64.02 apk.b64.03
+          git config user.name "github-actions[bot]"
+          git config user.email "41898282+github-actions[bot]@users.noreply.github.com"
+          git add -A
+          git commit -m "Retirado artefacto temporal de la release Android"
+          git push
+      - name: Release android-latest
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          gh release delete android-latest -y --cleanup-tag || true
+          gh release create android-latest /tmp/h/hilvan.apk \
+            --title "Hilván para Android" \
+            --notes "APK de Hilván v1.0. Instalación directa: el teléfono pedirá permitir orígenes desconocidos. Necesita internet; la lectura en voz alta y el dictado usan los servicios de voz del teléfono." \
+            --latest
