@@ -26,12 +26,14 @@ const ev = async e => { const r = await send('Runtime.evaluate', { expression: e
 await send('Runtime.enable');
 const waitFor = async (expr, ms = 40000) => { for (let t = 0; t < ms; t += 1000) { try { if (await ev(expr) === true) return true; } catch {} await sleep(1000); } return false; };
 
-if (MODE === 'set') { await waitFor(`document.readyState==='complete'`, 45000); await aseguraPagina(); await ev(`localStorage.setItem('hilvan_e2e_marca','sobrevive-'+${JSON.stringify(process.env.MARK || 'x')})`); log('persistencia: marcador escrito', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
-if (MODE === 'get') { await waitFor(`document.readyState==='complete'`, 45000); await aseguraPagina(); log('persistencia: marcador tras reinicio', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
-if (MODE === 'online') { await waitFor(`document.readyState==='complete'`, 30000); log('red recuperada: titulo', await ev('document.title')); process.exit(0); }
-
 const aseguraPagina = async () => {
   for (let i = 0; i < 6; i++) {
+    const u = await ev('location.href');
+    if (!u.includes('xesco-tejedor.github.io')) {
+      log('la pestana no es la app (' + String(u).slice(0, 40) + '): navegando');
+      await ev(`location.href='https://xesco-tejedor.github.io/Hilvan/'`); await sleep(15000);
+      await waitFor(`document.readyState==='complete'`, 30000); continue;
+    }
     const h = await ev(`(document.querySelector('h1')||{}).innerText||''`);
     if (h) { if (i > 0) log('carga recuperada tras reintento', i); return true; }
     log('pagina no cargada (intento', i + 1, '): recargando');
@@ -40,6 +42,10 @@ const aseguraPagina = async () => {
   }
   return false;
 };
+
+if (MODE === 'set') { await waitFor(`document.readyState==='complete'`, 45000); await aseguraPagina(); await ev(`localStorage.setItem('hilvan_e2e_marca','sobrevive-'+${JSON.stringify(process.env.MARK || 'x')})`); log('persistencia: marcador escrito', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
+if (MODE === 'get') { await waitFor(`document.readyState==='complete'`, 45000); await aseguraPagina(); log('persistencia: marcador tras reinicio', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
+if (MODE === 'online') { await waitFor(`document.readyState==='complete'`, 30000); log('red recuperada: titulo', await ev('document.title')); process.exit(0); }
 
 if (MODE === 'main') {
   await waitFor(`document.readyState==='complete'`, 45000);
@@ -70,7 +76,8 @@ if (MODE === 'exportprint') {
   process.exit(0);
 }
 if (MODE === 'api36') {
-  await waitFor(`document.readyState==='complete'`, 45000); await sleep(1000);
+  await waitFor(`document.readyState==='complete'`, 45000);
+  await aseguraPagina(); await sleep(1000);
   log('api36 titulo', await ev('document.title'));
   log('api36 cabecera visible bajo la barra de estado', await ev(`(()=>{const h=document.querySelector('h1');return !!h&&h.getBoundingClientRect().top>=0&&h.getBoundingClientRect().height>0})()`));
   log('api36 puente', await ev(`typeof (window.HilvanAndroid||{}).leer`));
