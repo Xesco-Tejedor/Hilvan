@@ -7,7 +7,7 @@ Aplicación de escritura narrativa asistida por IA. Parte de una frase o una ima
 ## Qué puedes hacer
 
 - Empezar con una premisa escrita, dictada por micrófono o una imagen.
-- Escuchar cada fragmento leído en voz alta.
+- Escuchar cada fragmento leído en voz alta, con voz elegible y entonación según puntuación y diálogo.
 - Combinar géneros y elegir longitud y persona narrativa.
 - Ajustar seis controles: azar creativo, giros de trama, tono, ritmo, descripción y fidelidad al canon.
 - Continuar con una indicación propia o uno de los caminos propuestos.
@@ -39,7 +39,7 @@ Aplicación de escritura narrativa asistida por IA. Parte de una frase o una ima
 
 El dictado usa el reconocimiento de voz del navegador (Web Speech API). Funciona en Chrome y derivados; en otros navegadores el botón no aparece. Chrome envía el audio a sus servidores para transcribirlo: la aplicación no graba ni conserva audio. Requiere conceder el permiso de micrófono a la página.
 
-La lectura en voz alta usa las voces instaladas en el dispositivo o las del navegador (también Web Speech API). Si el navegador no la admite, el botón Escuchar no aparece.
+La lectura en voz alta usa las voces instaladas en el dispositivo o las del navegador (también Web Speech API). Si el navegador no la admite, el botón Escuchar no aparece. Puedes elegir la voz española en el selector «Voz de lectura», sobre el relato. La lectura modula pausas, tono y ritmo según la puntuación y el diálogo para que suene menos plana, pero la calidad final depende de la voz instalada: en Android conviene activar la voz de alta calidad en Ajustes → Sistema → Idiomas → Conversión de texto a voz. Ninguna voz gratuita de navegador equivale a una narración profesional.
 
 ## IA, conexión y privacidad
 
