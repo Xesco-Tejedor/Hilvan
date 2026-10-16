@@ -116,7 +116,7 @@ a{color:var(--soft)}
   </section>
 
   <section id="story" class="hid">
-    <div class="card" style="margin-bottom:0"><h2 id="stTitle">Relato</h2><div class="mut" id="stMeta"></div></div>
+    <div class="card" style="margin-bottom:0"><h2 id="stTitle">Relato</h2><div class="mut" id="stMeta"></div><div class="row hid" style="margin-top:8px" id="vozRow"><div style="flex:1"><div class="mut">Voz de lectura (las instala tu dispositivo)</div><select id="vozSel"></select></div></div></div>
     <div id="segs"></div>
     <div id="opts"></div>
     <div id="errs"></div>
@@ -393,17 +393,36 @@ let rec=null,recOn=false;
 
 /* ---------- voz: lectura de fragmentos ---------- */
 const SYN="speechSynthesis" in window?window.speechSynthesis:null;
-let speakId=null,vozEs=null;
-function pickVoice(){if(!SYN)return;const vs=SYN.getVoices();vozEs=vs.find(v=>/^es[-_]es/i.test(v.lang))||vs.find(v=>/^es/i.test(v.lang))||null}
-if(SYN){pickVoice();SYN.onvoiceschanged=pickVoice}
-function stopSpeak(){if(SYN)SYN.cancel();speakId=null;document.querySelectorAll('[data-a="listen"]').forEach(b=>b.textContent="🔊 Escuchar")}
+let speakId=null,speakTimer=null,speakGen=0,vozSel=localStorage.getItem("hilvan-voz")||"";
+function vocesEs(){if(!SYN)return[];const vs=SYN.getVoices();const es=vs.filter(v=>/^es([-_]|$)/i.test(v.lang));return es.length?es:vs}
+function vozActual(){const vs=vocesEs();return vs.find(v=>v.voiceURI===vozSel)||vs.find(v=>/^es[-_]es/i.test(v.lang))||vs[0]||null}
+function fillVoices(){const row=$("vozRow"),sel=$("vozSel");if(!SYN||!row)return;const vs=vocesEs();row.classList.toggle("hid",!vs.length);sel.innerHTML=vs.map(v=>`<option value="${esc(v.voiceURI)}"${v.voiceURI===vozSel?" selected":""}>${esc(v.name)}</option>`).join("");sel.onchange=()=>{vozSel=sel.value;localStorage.setItem("hilvan-voz",vozSel)}}
+if(SYN){fillVoices();SYN.onvoiceschanged=fillVoices}
+function stopSpeak(){speakGen++;if(speakTimer){clearTimeout(speakTimer);speakTimer=null}if(SYN)SYN.cancel();speakId=null;document.querySelectorAll('[data-a="listen"]').forEach(b=>b.textContent="🔊 Escuchar")}
+function unidadesVoz(txt){
+ const u=[];for(const p of txt.split(/(?<=[.!?…"»])\s+/)){let t=p.trim();if(!t)continue;
+  let pitch=1,rate=1;
+  if(/[?¿]/.test(t)){pitch=1.12;rate=1.02}
+  else if(/[!¡]/.test(t)){pitch=1.08;rate=1.06}
+  else if(/^[«"—–-]/.test(t)||/»$/.test(t)){pitch=1.06;rate=1.03}
+  else if(/…/.test(t)){rate=0.94}
+  while(t.length>240){let c=t.lastIndexOf(" ",240);if(c<120)c=240;u.push({t:t.slice(0,c),pitch,rate,pause:220});t=t.slice(c).trim()}
+  if(t)u.push({t,pitch,rate,pause:/[.!?…"»]$/.test(t)?340:220})}
+ return u}
 function speakSeg(id,btn){if(!SYN)return;
  if(speakId===id){stopSpeak();return}
  stopSpeak();const s=S&&S.segs.find(x=>x.id===id);if(!s)return;
  const txt=s.text.replace(/\s+/g," ").trim();if(!txt)return;
- speakId=id;btn.textContent="⏹ Detener";
- const parts=[];txt.split(/(?<=[.!?…"»])\s+/).forEach(fr=>{if(fr.length<=240)parts.push(fr);else{for(let i=0;i<fr.length;i+=240)parts.push(fr.slice(i,i+240))}});
- let n=0;for(const p of parts){const u=new SpeechSynthesisUtterance(p);u.lang="es-ES";if(vozEs)u.voice=vozEs;u.rate=1;if(++n===parts.length)u.onend=()=>{if(speakId===id){speakId=null;btn.textContent="🔊 Escuchar"}};SYN.speak(u)}}
+ const units=unidadesVoz(txt);if(!units.length)return;
+ speakId=id;const gen=++speakGen;btn.textContent="⏹ Detener";
+ const voz=vozActual();let i=0;
+ const next=()=>{if(speakId!==id||gen!==speakGen)return;
+  if(i>=units.length){speakId=null;btn.textContent="🔊 Escuchar";return}
+  const un=units[i++],u=new SpeechSynthesisUtterance(un.t);u.lang="es-ES";if(voz)u.voice=voz;u.pitch=un.pitch;u.rate=un.rate;
+  u.onend=()=>{if(speakId!==id||gen!==speakGen)return;speakTimer=setTimeout(next,un.pause)};
+  u.onerror=()=>{if(speakId===id&&gen===speakGen){speakId=null;btn.textContent="🔊 Escuchar"}};
+  SYN.speak(u)};
+ next()}
 addEventListener("pagehide",stopSpeak);
 
 /* ---------- exportar ---------- */
@@ -430,4 +449,4 @@ $("newBtn").onclick=resetStory;
  buildSliders();buildGenres(S&&S.genres);qshow();renderAll()})();
 </script>
 </body>
-</html>
+       </html>
