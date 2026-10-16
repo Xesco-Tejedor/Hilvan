@@ -6,7 +6,12 @@ const MODE = process.env.MODE || 'main';
 const log = (...a) => console.log('[e2e]', ...a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const shot = n => fs.writeFileSync(`${EV}/${n}.png`, execSync('adb exec-out screencap -p', { maxBuffer: 1 << 26 }));
-const tabs = await (await fetch('http://127.0.0.1:9222/json')).json();
+let tabs = null;
+for (let i = 0; i < 12 && !tabs; i++) {
+  try { tabs = await (await fetch('http://127.0.0.1:9222/json')).json(); }
+  catch (e) { log('CDP no listo (' + i + '):', String(e).slice(0, 60)); await sleep(2000); }
+}
+if (!tabs) { log('SIN PAGINA DEPURABLE (CDP no responde)'); process.exit(1); }
 const tab = tabs.find(t => t.type === 'page' && /^https?:/.test(t.url)) || tabs.find(t => t.type === 'page');
 if (!tab) { log('SIN PAGINA DEPURABLE'); process.exit(1); }
 log('pagina', tab.url);
@@ -21,12 +26,24 @@ const ev = async e => { const r = await send('Runtime.evaluate', { expression: e
 await send('Runtime.enable');
 const waitFor = async (expr, ms = 40000) => { for (let t = 0; t < ms; t += 1000) { try { if (await ev(expr) === true) return true; } catch {} await sleep(1000); } return false; };
 
-if (MODE === 'set') { await waitFor(`document.readyState==='complete'`, 45000); await ev(`localStorage.setItem('hilvan_e2e_marca','sobrevive-'+${JSON.stringify(process.env.MARK || 'x')})`); log('persistencia: marcador escrito', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
-if (MODE === 'get') { await waitFor(`document.readyState==='complete'`, 45000); log('persistencia: marcador tras reinicio', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
+if (MODE === 'set') { await waitFor(`document.readyState==='complete'`, 45000); await aseguraPagina(); await ev(`localStorage.setItem('hilvan_e2e_marca','sobrevive-'+${JSON.stringify(process.env.MARK || 'x')})`); log('persistencia: marcador escrito', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
+if (MODE === 'get') { await waitFor(`document.readyState==='complete'`, 45000); await aseguraPagina(); log('persistencia: marcador tras reinicio', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
 if (MODE === 'online') { await waitFor(`document.readyState==='complete'`, 30000); log('red recuperada: titulo', await ev('document.title')); process.exit(0); }
+
+const aseguraPagina = async () => {
+  for (let i = 0; i < 6; i++) {
+    const h = await ev(`(document.querySelector('h1')||{}).innerText||''`);
+    if (h) { if (i > 0) log('carga recuperada tras reintento', i); return true; }
+    log('pagina no cargada (intento', i + 1, '): recargando');
+    await ev('location.reload()'); await sleep(12000);
+    await waitFor(`document.readyState==='complete'`, 30000);
+  }
+  return false;
+};
 
 if (MODE === 'main') {
   await waitFor(`document.readyState==='complete'`, 45000);
+  await aseguraPagina();
   log('origen', await ev('location.origin'));
   log('UA', await ev('navigator.userAgent'));
   log('titulo', await ev('document.title'));
