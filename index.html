@@ -77,7 +77,7 @@ button.rec{border-color:var(--bad)!important;color:var(--bad)!important;animatio
 .char{border:1px solid var(--line);border-radius:12px;padding:10px;margin:8px 0;background:#120f0b}
 .char b{color:var(--soft)}
 .char textarea{min-height:56px;margin-top:6px;font-size:14px}
-#toast{position:fixed;left:50%;top:14px;transform:translate(-50%,-90px);background:var(--amber);color:#1a1200;padding:10px 16px;border-radius:12px;font-weight:600;z-index:60;transition:transform .3s;max-width:90vw}
+#toast{position:fixed;left:50%;bottom:26px;top:auto;transform:translate(-50%,140px);background:var(--amber);color:#1a1200;padding:10px 16px;border-radius:12px;font-weight:600;z-index:60;transition:transform .3s;max-width:90vw;text-align:center}
 #toast.on{transform:translate(-50%,0)}
 .hid{display:none!important}
 details summary{cursor:pointer;color:var(--soft);font-weight:600;list-style:none}
@@ -468,4 +468,4 @@ function copiaMasNueva(clave){let local=null,tl=0;try{local=localStorage.getItem
  buildSliders();buildGenres(S&&S.genres);qshow();renderAll()})();
 </script>
 </body>
-       </html>
+  </html>
