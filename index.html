@@ -174,6 +174,7 @@ a{color:var(--soft)}
 const PROXY="https://gemini-proxy.francesc-adria-perello.workers.dev/";
 const FREE_MODEL="google/gemma-4-31b-it:free";
 const $=id=>document.getElementById(id);
+const NAV=window.HilvanAndroid||null; // puente nativo (app Android); en navegador no existe
 const esc=s=>String(s==null?"":s).replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
 const uid=()=>Math.random().toString(36).slice(2,10);
 const clip=(s,n)=>{s=String(s||"");return s.length>n?s.slice(0,n-1)+"…":s};
@@ -343,7 +344,7 @@ function segHTML(s,i,last){
  const tag=s.kind==="dado"?`🎲 Dado ${s.dado.n} · ${s.dado.tipo}`:(s.kind==="inicio"?"Comienzo":"Trozo "+(i+1));
  const img=s.loadingImg?`<div class="ph">Pintando la escena…</div>`:(s.imgId&&IMGC[s.imgId]?`<img src="${IMGC[s.imgId]}" alt="${esc(clip(s.escena,120))}">`:"");
  return `<div class="seg ${s.kind==="dado"?"dado":""}" data-id="${s.id}"><div class="tag">${tag}</div><div class="txt" data-t="${s.id}">${esc(s.text)}</div>${img}
- <div class="tools">${SYN?`<button class="ghost sm" data-a="listen">${speakId===s.id?"⏹ Detener":"🔊 Escuchar"}</button>`:""}<button class="ghost sm" data-a="img">${s.imgId?"🖼 Otra imagen":"🖼 Ilustrar"}</button>${s.imgId?`<button class="ghost sm" data-a="img2">Misma escena, otra semilla</button>`:""}<button class="ghost sm" data-a="edit">✏️ Editar</button>${last?`<button class="ghost sm" data-a="redo">↻ Otra versión</button><button class="ghost sm" data-a="del">🗑</button>`:""}</div></div>`}
+ <div class="tools">${(SYN||(NAV&&NAV.leer))?`<button class="ghost sm" data-a="listen">${speakId===s.id?"⏹ Detener":"🔊 Escuchar"}</button>`:""}<button class="ghost sm" data-a="img">${s.imgId?"🖼 Otra imagen":"🖼 Ilustrar"}</button>${s.imgId?`<button class="ghost sm" data-a="img2">Misma escena, otra semilla</button>`:""}<button class="ghost sm" data-a="edit">✏️ Editar</button>${last?`<button class="ghost sm" data-a="redo">↻ Otra versión</button><button class="ghost sm" data-a="del">🗑</button>`:""}</div></div>`}
 function renderAll(anim){
  stopSpeak();renderRoster();$("start").classList.toggle("hid",!!S&&S.segs.length>0);$("params").classList.remove("hid");
  const has=S&&S.segs.length>0;$("story").classList.toggle("hid",!has);$("dieBtn").classList.toggle("hid",!has);$("newBtn").classList.toggle("hid",!has);
@@ -383,7 +384,13 @@ $("dieBtn").onclick=rollDie;
 /* ---------- voz: dictado (Web Speech, Chrome) ---------- */
 const SRc=window.SpeechRecognition||window.webkitSpeechRecognition;
 let rec=null,recOn=false;
-(function(){const b=$("micBtn");if(!SRc){b.classList.add("hid");return}
+(function(){const b=$("micBtn");
+ if(!SRc&&NAV&&NAV.dictar){ // app Android: dictado nativo
+  window.hilvanDictado=t=>{t=String(t||"").trim();if(t){const p=$("premise");p.value=(p.value.trim()?p.value.trim()+" ":"")+t}};
+  window.hilvanDictadoFin=()=>{recOn=false;b.classList.remove("rec");b.textContent="🎙 Dictar"};
+  b.onclick=()=>{if(recOn){NAV.pararDictar()}else{recOn=true;b.classList.add("rec");b.textContent="⏹ Escuchando… toca para parar";NAV.dictar()}};
+  return}
+ if(!SRc){b.classList.add("hid");return}
  b.onclick=()=>{if(recOn){try{rec.stop()}catch{}return}
   rec=new SRc();rec.lang="es-ES";rec.interimResults=false;rec.continuous=true;recOn=true;b.classList.add("rec");b.textContent="⏹ Escuchando… toca para parar";
   rec.onresult=e=>{let t="";for(let i=e.resultIndex;i<e.results.length;i++)if(e.results[i].isFinal)t+=e.results[i][0].transcript;t=t.trim();if(t){const p=$("premise");p.value=(p.value.trim()?p.value.trim()+" ":"")+t}};
@@ -398,7 +405,7 @@ function vocesEs(){if(!SYN)return[];const vs=SYN.getVoices();const es=vs.filter(
 function vozActual(){const vs=vocesEs();return vs.find(v=>v.voiceURI===vozSel)||vs.find(v=>/^es[-_]es/i.test(v.lang))||vs[0]||null}
 function fillVoices(){const row=$("vozRow"),sel=$("vozSel");if(!SYN||!row)return;const vs=vocesEs();row.classList.toggle("hid",!vs.length);sel.innerHTML=vs.map(v=>`<option value="${esc(v.voiceURI)}"${v.voiceURI===vozSel?" selected":""}>${esc(v.name)}</option>`).join("");sel.onchange=()=>{vozSel=sel.value;localStorage.setItem("hilvan-voz",vozSel)}}
 if(SYN){fillVoices();SYN.onvoiceschanged=fillVoices}
-function stopSpeak(){speakGen++;if(speakTimer){clearTimeout(speakTimer);speakTimer=null}if(SYN)SYN.cancel();speakId=null;document.querySelectorAll('[data-a="listen"]').forEach(b=>b.textContent="🔊 Escuchar")}
+function stopSpeak(){speakGen++;if(speakTimer){clearTimeout(speakTimer);speakTimer=null}if(SYN)SYN.cancel();if(NAV&&NAV.pararLectura)NAV.pararLectura();speakId=null;document.querySelectorAll('[data-a="listen"]').forEach(b=>b.textContent="🔊 Escuchar")}
 function unidadesVoz(txt){
  const u=[];for(const p of txt.split(/(?<=[.!?…"»])\s+/)){let t=p.trim();if(!t)continue;
   let pitch=1,rate=1;
@@ -409,7 +416,14 @@ function unidadesVoz(txt){
   while(t.length>240){let c=t.lastIndexOf(" ",240);if(c<120)c=240;u.push({t:t.slice(0,c),pitch,rate,pause:220});t=t.slice(c).trim()}
   if(t)u.push({t,pitch,rate,pause:/[.!?…"»]$/.test(t)?340:220})}
  return u}
-function speakSeg(id,btn){if(!SYN)return;
+window.hilvanFinLectura=()=>{speakId=null;document.querySelectorAll('[data-a="listen"]').forEach(b=>b.textContent="🔊 Escuchar")};
+function speakSeg(id,btn){
+ if(NAV&&NAV.leer){ // app Android: lectura nativa (el tono lo pone la voz del sistema)
+  if(speakId===id){stopSpeak();return}
+  stopSpeak();const s0=S&&S.segs.find(x=>x.id===id);if(!s0)return;
+  const t0=s0.text.replace(/\s+/g," ").trim();if(!t0)return;
+  speakId=id;btn.textContent="⏹ Detener";NAV.leer(JSON.stringify(unidadesVoz(t0)));return}
+ if(!SYN)return;
  if(speakId===id){stopSpeak();return}
  stopSpeak();const s=S&&S.segs.find(x=>x.id===id);if(!s)return;
  const txt=s.text.replace(/\s+/g," ").trim();if(!txt)return;
@@ -427,7 +441,7 @@ addEventListener("pagehide",stopSpeak);
 
 /* ---------- exportar ---------- */
 const slug=()=>(S.title||"relato").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"relato";
-function dl(name,mime,data){const b=new Blob([data],{type:mime}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
+function dl(name,mime,data){if(NAV&&NAV.guardar){NAV.guardar(name,mime,data);return}const b=new Blob([data],{type:mime}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function mdOut(){let o=`# ${S.title}\n\n`;S.segs.forEach(s=>{if(s.kind==="dado")o+=`> 🎲 Dado ${s.dado.n}: ${s.dado.tipo}\n\n`;o+=s.text+"\n\n";if(s.imgId&&IMGC[s.imgId])o+=`*[Ilustración: ${s.escena||""}]*\n\n`});o+=`---\n## Biblia\n\n**Estilo visual:** ${S.style}\n\n`;S.bible.chars.forEach(c=>o+=`- **${c.nombre}**${c.rol?" ("+c.rol+")":""}: ${c.aspecto}\n`);return o}
 function htmlOut(){const css=`body{font:18px/1.7 Georgia,serif;max-width:720px;margin:32px auto;padding:0 18px;color:#1d1a16}h1{font-family:Arial,sans-serif;border-bottom:3px solid #ffb000;padding-bottom:8px}p.d{font:14px Arial;color:#b04030;border-left:3px solid #ff6b5b;padding-left:8px}img{width:100%;height:auto;border-radius:8px;margin:10px 0;break-inside:avoid}p{white-space:pre-wrap}.f{font:12px Arial;color:#777;margin-top:30px}@page{size:A4;margin:18mm}`;
  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(S.title)}</title><style>${css}</style></head><body><h1>${esc(S.title)}</h1>`+S.segs.map(s=>(s.kind==="dado"?`<p class="d">🎲 Dado ${s.dado.n} · ${esc(s.dado.tipo)}</p>`:"")+`<p>${esc(s.text)}</p>`+(s.imgId&&IMGC[s.imgId]?`<img src="${IMGC[s.imgId]}" alt="">`:"")).join("")+`<div class="f">Creado con Hilván · xesco-tejedor.github.io/Hilvan</div></body></html>`}
@@ -436,7 +450,7 @@ document.querySelector("details:has([data-x])").addEventListener("click",async e
  if(x==="md")dl(slug()+".md","text/markdown",mdOut());
  else if(x==="html")dl(slug()+".html","text/html",htmlOut());
  else if(x==="json")dl(slug()+".json","application/json",await jsonOut());
- else if(x==="pdf"){const w=window.open("","_blank");if(!w)return toast("Permite ventanas emergentes para imprimir");w.document.write(htmlOut());w.document.close();setTimeout(()=>w.print(),600)}});
+ else if(x==="pdf"){if(NAV&&NAV.imprimir){NAV.imprimir(S.title||"relato",htmlOut());return}const w=window.open("","_blank");if(!w)return toast("Permite ventanas emergentes para imprimir");w.document.write(htmlOut());w.document.close();setTimeout(()=>w.print(),600)}});
 $("impBtn").onclick=()=>$("impFile").click();
 $("impFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const o=JSON.parse(await f.text());if(!o.segs||!o.bible)throw 0;const im=o.images||{};delete o.images;(o.roster||[]).forEach(r=>{if(!rfind(r.nombre))ROSTER.push(r)});rsave();delete o.roster;for(const k in im){IMGC[k]=im[k];await imgPut(k,im[k])}S=o;save();buildSliders();renderAll();renderRoster();toast("Relato importado")}catch{toast("Archivo no válido")}};
 function resetStory(){if(busy)return;if(!confirm("¿Empezar otro relato? El actual se borra de este navegador (exporta antes si quieres conservarlo)."))return;S=null;localStorage.removeItem(LS);imgData=null;$("premise").value="";$("imgFile").value="";$("imgPrev").classList.add("hid");buildGenres();buildSliders();showErr("");renderAll();scrollTo({top:0,behavior:"smooth"})}
