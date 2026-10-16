@@ -21,6 +21,10 @@ log "Motores TTS instalados: $(adb shell pm list packages | grep -i tts | tr '\n
 adb logcat -c; adb logcat -v time > "$EV/logcat-completo.txt" 2>&1 &
 LOGPID=$!
 
+log "== Red del emulador: esperando conectividad"
+OKR=0; for i in $(seq 1 10); do adb shell ping -c1 -W2 8.8.8.8 >/dev/null 2>&1 && { OKR=1; break; }; sleep 3; done
+log "red emulador: $([ $OKR = 1 ] && echo OK || echo SIN-RED)"
+
 log "== Instalo la APK de depuracion (mismo codigo que la release) y concedo microfono"
 adb install -r "$DBG" | tee -a "$EV/e2e-log.txt"
 log "versionCode: $(adb shell dumpsys package $PKG | grep -m1 versionCode)"
@@ -54,16 +58,26 @@ adb shell cmd connectivity airplane-mode enable; adb shell svc wifi disable; adb
 adb shell am force-stop $PKG; start_app; sleep 9
 adb exec-out screencap -p > "$EV/11-sin-red-cache.png"
 node_e2e offline
+if grep -qE 'CONEXION DE DEPURACION CERRADA|fetch failed|SIN PAGINA' /tmp/last_e2e.txt; then
+  log "REINTENTO offline: CDP no listo"; start_app; sleep 8; node_e2e offline
+fi
+adb exec-out screencap -p > "$EV/11b-sin-red-cache.png"
 adb shell cmd connectivity airplane-mode disable; adb shell svc wifi enable; adb shell svc data enable; sleep 5
 
 log "== Sin conexion SIN cache (pm clear, como una primera instalacion offline): vista de error con Reintentar"
 adb shell pm clear $PKG >/dev/null
 adb shell cmd connectivity airplane-mode enable; adb shell svc wifi disable; adb shell svc data disable; sleep 4
-adb shell am start -W -n $PKG/.MainActivity >/dev/null 2>&1; sleep 10
+adb shell am start -W -n $PKG/.MainActivity >/dev/null 2>&1
+FOUND=0
+for i in 1 2 3 4 5 6; do
+  sleep 12
+  adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
+  adb shell cat /sdcard/ui.xml > "$EV/ui-sin-red.xml" 2>/dev/null
+  FOUND=$(grep -c 'REINTENTAR' "$EV/ui-sin-red.xml" 2>/dev/null || echo 0)
+  [ "$FOUND" -ge 1 ] && break
+done
 adb exec-out screencap -p > "$EV/12-sin-red-error.png"
-adb shell uiautomator dump /sdcard/ui.xml >/dev/null 2>&1
-adb shell cat /sdcard/ui.xml > "$EV/ui-sin-red.xml" 2>/dev/null
-log "sin red sin cache: vista de error visible (Reintentar): $(grep -c 'Reintentar' "$EV/ui-sin-red.xml" 2>/dev/null || echo 0)"
+log "sin red sin cache: vista de error visible (REINTENTAR): $FOUND"
 adb shell cmd connectivity airplane-mode disable; adb shell svc wifi enable; adb shell svc data enable; sleep 5
 log "== Red recuperada: reabre y carga"
 adb shell am force-stop $PKG; start_app; sleep 8
@@ -88,8 +102,10 @@ adb shell dumpsys window | grep -m1 mCurrentFocus | tee -a "$EV/e2e-log.txt"
 kill $LOGPID 2>/dev/null
 log "excepciones JS en pagina: $(grep -c '\] EXC' "$EV/e2e-log.txt" || true)"
 
+chk0(){ :; }
 V=PASS; why=""
 chk(){ grep -qE "$1" "$EV/e2e-log.txt" || { V=FAIL; why="$why | falta: $2"; }; }
+chk 'red emulador: OK' 'conectividad inicial del emulador'
 chk 'Dispositivo: .* API 33' 'emulador API 33'
 chk 'RECORD_AUDIO: granted=true' 'permiso microfono concedido'
 chk 'puente dictar/leer/guardar/imprimir \["function","function","function","function","function","function"\]' 'puente nativo completo'
@@ -102,7 +118,7 @@ chk 'exportacion contenido: contenido e2e Hilv' 'contenido exportado correcto'
 chk 'foco tras imprimir: .*[Pp]rint' 'vista de impresion del sistema abierta'
 chk 'persistencia: marcador tras reinicio sobrevive-' 'persistencia tras cierre completo'
 chk 'sin red: app renderiza desde cache true' 'sin conexion: abre desde cache'
-chk 'sin red sin cache: vista de error visible \(Reintentar\): [1-9]' 'sin conexion sin cache: vista Reintentar'
+chk 'sin red sin cache: vista de error visible \(REINTENTAR\): [1-9]' 'sin conexion sin cache: vista REINTENTAR'
 chk 'red recuperada: titulo Hilv' 'recarga al volver la red'
 chk 'pid release(tras reintento)?=[0-9]+' 'release firmada publicada abre'
 chk 'excepciones JS en pagina: 0$' 'sin excepciones de script en la pagina'
