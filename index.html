@@ -51,7 +51,7 @@ input[type=range]{width:100%;accent-color:var(--amber);height:34px}
 .seg.dado .tag{color:var(--bad)}
 .seg .txt{white-space:pre-wrap;font-size:17px;line-height:1.65}
 .seg .txt[contenteditable=true]{outline:2px dashed var(--amber);padding:6px;border-radius:8px}
-.seg img{width:100%;border-radius:12px;margin-top:12px;border:1px solid var(--line);display:block;animation:rise .6s both}
+.seg img{width:100%;height:auto;border-radius:12px;margin-top:12px;border:1px solid var(--line);display:block;animation:rise .6s both}
 .tools{display:flex;gap:8px;flex-wrap:wrap;margin-top:10px}
 .ph{height:120px;border-radius:12px;margin-top:12px;border:1px dashed var(--amber);display:flex;align-items:center;justify-content:center;color:var(--soft);background:linear-gradient(110deg,#1b1610 30%,#2b2218 50%,#1b1610 70%);background-size:200% 100%;animation:shim 1.4s linear infinite}
 @keyframes shim{to{background-position:-200% 0}}
@@ -259,7 +259,7 @@ async function callAI(system,user,temp,imgs){
  let provs=aiPref==="auto"?["gemini","openrouter"]:[aiPref];
  if(imgs&&imgs.length)provs=["gemini"];
  for(let i=0;i<provs.length;i++){const p=provs[i],ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),200000);let r,d;
-  try{r=await fetch(PROXY+(p==="openrouter"?"openrouter":""),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:ctrl.signal});d=await r.json()}
+  try{for(let k=0;k<3;k++){r=await fetch(PROXY+(p==="openrouter"?"openrouter":""),{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify(body),signal:ctrl.signal});d=await r.json().catch(()=>({error:{message:"Respuesta no válida"}}));if(p==='gemini'&&[503,500,502].includes(r.status)&&k<2){await new Promise(z=>setTimeout(z,1500*(k+1)));continue}break}}
   catch(e){clearTimeout(tm);if(i+1<provs.length)continue;throw new Error(e.name==="AbortError"?"La IA ha tardado demasiado. Inténtalo de nuevo.":"No se pudo contactar con la IA.")}
   clearTimeout(tm);qadd(p);
   if(!r.ok||d.error){const m=String(d.error&&(d.error.message||d.error)||"");
@@ -324,10 +324,10 @@ async function toDataURL(blob,maxW){return new Promise(res=>{const u=URL.createO
 async function illustrate(id,vary){
  const seg=S.segs.find(s=>s.id===id);if(!seg||seg.loadingImg)return;seg.loadingImg=true;renderAll();
  const seed=S.seed+(vary?(seg.imgVar=(seg.imgVar||0)+1)*17:(seg.imgVar||0)*17);
- const url="https://image.pollinations.ai/prompt/"+encodeURIComponent(imgPrompt(seg))+`?width=1024&height=576&seed=${seed}&nologo=true&model=flux&safe=true`;
+ const url="https://image.pollinations.ai/prompt/"+encodeURIComponent(imgPrompt(seg))+`?width=1024&height=768&seed=${seed}&nologo=true&model=flux&safe=true`;
  let ok=false,msg="";
  for(let a=0;a<2&&!ok;a++){try{const ctrl=new AbortController(),tm=setTimeout(()=>ctrl.abort(),90000);const r=await fetch(url,{signal:ctrl.signal});clearTimeout(tm);
-   if(!r.ok){msg=r.status===429?"El generador gratuito de imágenes está saturado. Prueba en un minuto.":"El generador de imágenes respondió con error "+r.status;await new Promise(r=>setTimeout(r,1500));continue}
+   if(!r.ok){let w=1500;if(r.status===402||r.status===429){msg="El generador gratuito de imágenes permite una imagen cada ~45 s. Espera un poco y vuelve a pulsar.";try{const j=await r.json();const m=/after (\d+)s/.exec(j&&j.error&&j.error.message||"");w=Math.min(50,m?+m[1]+2:20)*1000}catch{w=20000}if(a===0)toast("Imagen en cola, reintentando en unos segundos…")}else msg="El generador de imágenes respondió con error "+r.status;await new Promise(r=>setTimeout(r,w));continue}
    const b=await r.blob();if(!/image/.test(b.type)){msg="Respuesta no válida del generador de imágenes";continue}
    const d=await toDataURL(b,1024);if(!d){msg="No se pudo leer la imagen";continue}
    seg.imgId=seg.imgId||("im-"+seg.id);IMGC[seg.imgId]=d;await imgPut(seg.imgId,d);ok=true}catch(e){msg=e.name==="AbortError"?"La imagen tardó demasiado. Reintenta.":"No se pudo contactar con el generador de imágenes."}}
@@ -378,7 +378,7 @@ $("dieBtn").onclick=rollDie;
 const slug=()=>(S.title||"relato").toLowerCase().normalize("NFD").replace(/[\u0300-\u036f]/g,"").replace(/[^a-z0-9]+/g,"-").replace(/^-|-$/g,"")||"relato";
 function dl(name,mime,data){const b=new Blob([data],{type:mime}),a=document.createElement("a");a.href=URL.createObjectURL(b);a.download=name;document.body.appendChild(a);a.click();setTimeout(()=>{URL.revokeObjectURL(a.href);a.remove()},500)}
 function mdOut(){let o=`# ${S.title}\n\n`;S.segs.forEach(s=>{if(s.kind==="dado")o+=`> 🎲 Dado ${s.dado.n}: ${s.dado.tipo}\n\n`;o+=s.text+"\n\n";if(s.imgId&&IMGC[s.imgId])o+=`*[Ilustración: ${s.escena||""}]*\n\n`});o+=`---\n## Biblia\n\n**Estilo visual:** ${S.style}\n\n`;S.bible.chars.forEach(c=>o+=`- **${c.nombre}**${c.rol?" ("+c.rol+")":""}: ${c.aspecto}\n`);return o}
-function htmlOut(){const css=`body{font:18px/1.7 Georgia,serif;max-width:720px;margin:32px auto;padding:0 18px;color:#1d1a16}h1{font-family:Arial,sans-serif;border-bottom:3px solid #ffb000;padding-bottom:8px}p.d{font:14px Arial;color:#b04030;border-left:3px solid #ff6b5b;padding-left:8px}img{width:100%;border-radius:8px;margin:10px 0;break-inside:avoid}p{white-space:pre-wrap}.f{font:12px Arial;color:#777;margin-top:30px}@page{size:A4;margin:18mm}`;
+function htmlOut(){const css=`body{font:18px/1.7 Georgia,serif;max-width:720px;margin:32px auto;padding:0 18px;color:#1d1a16}h1{font-family:Arial,sans-serif;border-bottom:3px solid #ffb000;padding-bottom:8px}p.d{font:14px Arial;color:#b04030;border-left:3px solid #ff6b5b;padding-left:8px}img{width:100%;height:auto;border-radius:8px;margin:10px 0;break-inside:avoid}p{white-space:pre-wrap}.f{font:12px Arial;color:#777;margin-top:30px}@page{size:A4;margin:18mm}`;
  return `<!DOCTYPE html><html lang="es"><head><meta charset="utf-8"><meta name="viewport" content="width=device-width,initial-scale=1"><title>${esc(S.title)}</title><style>${css}</style></head><body><h1>${esc(S.title)}</h1>`+S.segs.map(s=>(s.kind==="dado"?`<p class="d">🎲 Dado ${s.dado.n} · ${esc(s.dado.tipo)}</p>`:"")+`<p>${esc(s.text)}</p>`+(s.imgId&&IMGC[s.imgId]?`<img src="${IMGC[s.imgId]}" alt="">`:"")).join("")+`<div class="f">Creado con Hilván · xesco-tejedor.github.io/Hilvan</div></body></html>`}
 async function jsonOut(){const o=JSON.parse(JSON.stringify(S));o.roster=ROSTER;o.images={};for(const s of S.segs)if(s.imgId&&IMGC[s.imgId])o.images[s.imgId]=IMGC[s.imgId];return JSON.stringify(o)}
 document.querySelector("details:has([data-x])").addEventListener("click",async e=>{const b=e.target.closest("[data-x]");if(!b||!S)return;const x=b.dataset.x;
