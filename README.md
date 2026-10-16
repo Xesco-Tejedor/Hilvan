@@ -6,7 +6,8 @@ Aplicación de escritura narrativa asistida por IA. Parte de una frase o una ima
 
 ## Qué puedes hacer
 
-- Empezar con una premisa escrita o una imagen.
+- Empezar con una premisa escrita, dictada por micrófono o una imagen.
+- Escuchar cada fragmento leído en voz alta.
 - Combinar géneros y elegir longitud y persona narrativa.
 - Ajustar seis controles: azar creativo, giros de trama, tono, ritmo, descripción y fidelidad al canon.
 - Continuar con una indicación propia o uno de los caminos propuestos.
@@ -19,9 +20,9 @@ Aplicación de escritura narrativa asistida por IA. Parte de una frase o una ima
 ## Cómo usarla
 
 1. Abre la aplicación en un navegador con conexión a internet.
-2. Escribe una frase en **Punto de partida** o pulsa **O parte de una imagen** para seleccionar un archivo. Puedes elegir varios géneros y personajes de tu reparto.
+2. Escribe una frase en **Punto de partida**, pulsa **🎙 Dictar** para decirla en voz alta (en navegadores compatibles, como Chrome) o pulsa **O parte de una imagen** para seleccionar un archivo. Puedes elegir varios géneros y personajes de tu reparto.
 3. Ajusta los controles, la longitud aproximada del fragmento y la persona narrativa. Pulsa **Empezar relato**.
-4. Lee el resultado. Para avanzar, escribe qué debería ocurrir o elige un camino propuesto y pulsa **Continuar**. Los cambios de azar y estilo se aplican al siguiente fragmento.
+4. Lee el resultado o pulsa **🔊 Escuchar** en un fragmento para oírlo; el mismo botón (**⏹ Detener**) para la lectura. Para avanzar, escribe qué debería ocurrir o elige un camino propuesto y pulsa **Continuar**. Los cambios de azar y estilo se aplican al siguiente fragmento.
 5. Si quieres romper una situación estancada, usa el dado de emergencia. La tirada provoca una nueva intervención narrativa.
 6. Revisa la biblia y el aspecto de los personajes. El reparto queda disponible para otros relatos en ese navegador.
 7. Pulsa **Ilustrar** en un fragmento para pedir una imagen. Puedes regenerarla o cambiar su semilla visual.
@@ -33,6 +34,12 @@ Aplicación de escritura narrativa asistida por IA. Parte de una frase o una ima
 - **PDF:** abre la versión de impresión; elige guardar como PDF en el diálogo del navegador. Puede ser necesario permitir ventanas emergentes.
 - **Markdown:** texto y biblia. Las ilustraciones se describen, no se incrustan como archivos de imagen.
 - **JSON:** copia del relato, reparto e imágenes disponibles, que puede recuperarse con **Importar JSON**. Guarda esta copia para continuar en otro dispositivo.
+
+## Voz: dictado y lectura
+
+El dictado usa el reconocimiento de voz del navegador (Web Speech API). Funciona en Chrome y derivados; en otros navegadores el botón no aparece. Chrome envía el audio a sus servidores para transcribirlo: la aplicación no graba ni conserva audio. Requiere conceder el permiso de micrófono a la página.
+
+La lectura en voz alta usa las voces instaladas en el dispositivo o las del navegador (también Web Speech API). Si el navegador no la admite, el botón Escuchar no aparece.
 
 ## IA, conexión y privacidad
 
