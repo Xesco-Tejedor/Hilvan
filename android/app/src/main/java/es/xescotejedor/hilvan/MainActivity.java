@@ -291,6 +291,40 @@ public class MainActivity extends Activity {
         @JavascriptInterface public void pararLectura() { runOnUiThread(() -> { if (tts != null) tts.stop(); }); }
         @JavascriptInterface public void guardar(String nombre, String mime, String datos) { runOnUiThread(() -> guardarDescarga(nombre, mime, datos)); }
         @JavascriptInterface public void imprimir(String titulo, String html) { runOnUiThread(() -> imprimirHtml(titulo, html)); }
+
+        /* ---------- espejo duradero del estado del relato ----------
+           Los metodos del puente corren en el hilo JavaBridge, NUNCA en el hilo UI:
+           la escritura con fsync + rename atomico se hace aqui directamente.
+           Sobrevive a force-stop (no depende del volcado diferido del WebView). */
+        @JavascriptInterface public void guardarEstado(String clave, String datos) {
+            if (clave == null || !clave.matches("[a-zA-Z0-9-]+") || datos == null) return;
+            File dir = getFilesDir();
+            File tmp = new File(dir, "estado-" + clave + ".tmp");
+            File dst = new File(dir, "estado-" + clave + ".json");
+            try (FileOutputStream o = new FileOutputStream(tmp)) {
+                o.write(datos.getBytes(StandardCharsets.UTF_8));
+                o.getFD().sync();
+            } catch (Exception e) { return; }
+            if (!tmp.renameTo(dst)) tmp.delete();
+        }
+        @JavascriptInterface public String leerEstado(String clave) {
+            if (clave == null || !clave.matches("[a-zA-Z0-9-]+")) return null;
+            File f = new File(getFilesDir(), "estado-" + clave + ".json");
+            if (!f.exists() || f.length() > 4 * 1024 * 1024) return null;
+            try {
+                byte[] b = new byte[(int) f.length()];
+                try (java.io.FileInputStream in = new java.io.FileInputStream(f)) {
+                    int off = 0, n;
+                    while (off < b.length && (n = in.read(b, off, b.length - off)) > 0) off += n;
+                }
+                return new String(b, StandardCharsets.UTF_8);
+            } catch (Exception e) { return null; }
+        }
+        @JavascriptInterface public void borrarEstado(String clave) {
+            if (clave == null || !clave.matches("[a-zA-Z0-9-]+")) return;
+            new File(getFilesDir(), "estado-" + clave + ".json").delete();
+            new File(getFilesDir(), "estado-" + clave + ".tmp").delete();
+        }
     }
 
     @Override protected void onPause() {
