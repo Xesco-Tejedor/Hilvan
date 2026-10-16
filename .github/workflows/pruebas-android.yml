@@ -1,0 +1,62 @@
+name: Pruebas Android en emulador
+on:
+  workflow_dispatch:
+permissions:
+  contents: write
+concurrency:
+  group: android-pruebas
+  cancel-in-progress: true
+jobs:
+  build:
+    runs-on: ubuntu-latest
+    timeout-minutes: 45
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-java@v4
+        with: { distribution: temurin, java-version: '17' }
+      - uses: gradle/actions/setup-gradle@v3
+        with: { gradle-version: '8.11.1' }
+      - uses: actions/setup-node@v4
+        with: { node-version: '22' }
+      - name: Compilar APK de depuracion desde las fuentes del repo
+        run: |
+          cd android
+          gradle --no-daemon assembleDebug
+          mkdir -p ../out
+          cp app/build/outputs/apk/debug/app-debug.apk ../out/
+      - name: Descargar la APK firmada publicada y verificar su huella
+        run: |
+          mkdir -p out
+          curl -sL -o out/hilvan-release.apk https://github.com/Xesco-Tejedor/Hilvan/releases/download/android-latest/hilvan.apk
+          echo 'e7b85e2631e03b6a0f53c193c7ba2d3f9c8a4a37ed76a955bc6015d72bfe4b54  out/hilvan-release.apk' | sha256sum -c -
+      - name: Activar KVM
+        run: |
+          echo 'KERNEL=="kvm", GROUP="kvm", MODE="0666", OPTIONS+="static_node=kvm"' | sudo tee /etc/udev/rules.d/99-kvm4all.rules
+          sudo udevadm control --reload-rules
+          sudo udevadm trigger --name-match=kvm
+      - name: Emulador API 33 (pruebas completas)
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 33
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: bash android/e2e.sh out/app-debug.apk out/hilvan-release.apk
+        continue-on-error: true
+      - name: Emulador API 36 (arranque y pantalla)
+        timeout-minutes: 15
+        uses: reactivecircus/android-emulator-runner@v2
+        with:
+          api-level: 36
+          target: google_apis
+          arch: x86_64
+          disable-animations: true
+          script: bash android/e2e36.sh out/app-debug.apk
+        continue-on-error: true
+      - name: Publicar evidencias como prerelease
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          mkdir -p evidence
+          gh release delete android-pruebas -y --cleanup-tag || true
+          gh release create android-pruebas evidence/* --prerelease --title "Evidencias de prueba en emulador (run ${{ github.run_number }})" --notes "Pruebas de la APK de Hilvan en emuladores API 33 y API 36. Ver veredicto.txt y veredicto-api36.txt. Commit ${{ github.sha }}."
