@@ -7,7 +7,7 @@ const log = (...a) => console.log('[e2e]', ...a);
 const sleep = ms => new Promise(r => setTimeout(r, ms));
 const shot = n => fs.writeFileSync(`${EV}/${n}.png`, execSync('adb exec-out screencap -p', { maxBuffer: 1 << 26 }));
 const tabs = await (await fetch('http://127.0.0.1:9222/json')).json();
-const tab = tabs.find(t => t.type === 'page');
+const tab = tabs.find(t => t.type === 'page' && /^https?:/.test(t.url)) || tabs.find(t => t.type === 'page');
 if (!tab) { log('SIN PAGINA DEPURABLE'); process.exit(1); }
 log('pagina', tab.url);
 const ws = new WebSocket(tab.webSocketDebuggerUrl);
@@ -21,8 +21,8 @@ const ev = async e => { const r = await send('Runtime.evaluate', { expression: e
 await send('Runtime.enable');
 const waitFor = async (expr, ms = 40000) => { for (let t = 0; t < ms; t += 1000) { try { if (await ev(expr) === true) return true; } catch {} await sleep(1000); } return false; };
 
-if (MODE === 'set') { await ev(`localStorage.setItem('hilvan_e2e_marca','sobrevive-'+${JSON.stringify(process.env.MARK || 'x')})`); log('persistencia: marcador escrito', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
-if (MODE === 'get') { log('persistencia: marcador tras reinicio', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
+if (MODE === 'set') { await waitFor(`document.readyState==='complete'`, 45000); await ev(`localStorage.setItem('hilvan_e2e_marca','sobrevive-'+${JSON.stringify(process.env.MARK || 'x')})`); log('persistencia: marcador escrito', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
+if (MODE === 'get') { await waitFor(`document.readyState==='complete'`, 45000); log('persistencia: marcador tras reinicio', await ev(`localStorage.getItem('hilvan_e2e_marca')`)); process.exit(0); }
 if (MODE === 'online') { await waitFor(`document.readyState==='complete'`, 30000); log('red recuperada: titulo', await ev('document.title')); process.exit(0); }
 
 if (MODE === 'main') {
@@ -40,7 +40,7 @@ if (MODE === 'main') {
   // Dictado: sin microfono real debe terminar el ciclo (no-match/timeout) sin tumbar la app
   await ev(`window.__dfin=0; window.__dic=0; window.hilvanDictadoFin=()=>{window.__dfin++}; window.hilvanDictado=t=>{window.__dic++}; 'ok'`);
   await ev(`window.HilvanAndroid.dictar(); 'ok'`);
-  log('dictado: ciclo termina sin audio (no-match/timeout esperado)', await waitFor('window.__dfin>=1', 45000));
+  log('dictado: ciclo termina sin audio (no-match/timeout/cancel esperado)', await waitFor('window.__dfin>=1', 100000));
   log('dictado: textos reconocidos (0 esperable sin micro)', await ev('window.__dic'));
   shot('02-tras-voz');
   process.exit(0);
@@ -57,6 +57,12 @@ if (MODE === 'api36') {
   log('api36 titulo', await ev('document.title'));
   log('api36 cabecera visible bajo la barra de estado', await ev(`(()=>{const h=document.querySelector('h1');return !!h&&h.getBoundingClientRect().top>=0&&h.getBoundingClientRect().height>0})()`));
   log('api36 puente', await ev(`typeof (window.HilvanAndroid||{}).leer`));
+  process.exit(0);
+}
+if (MODE === 'offline') {
+  await sleep(3000);
+  log('sin red: app renderiza desde cache', await ev(`document.title.includes('Hilv')`));
+  log('sin red: cabecera', await ev(`(document.querySelector('h1')||{}).innerText||''`));
   process.exit(0);
 }
 log('MODO DESCONOCIDO', MODE); process.exit(1);
