@@ -21,7 +21,7 @@ tono, velocidad y pausas), exportación a Descargas (MediaStore) e impresión/PD
 
 ## Versión y firma de la release publicada
 
-- `versionCode 1`, `versionName "1.0"`, `minSdk 24`, `targetSdk 34`, `compileSdk 36`
+- `versionCode 3`, `versionName "1.2"`, `minSdk 24`, `targetSdk 34`, `compileSdk 36`
 - Paquete: `es.xescotejedor.hilvan`
 - La APK de la release `android-latest` se firmó localmente con un keystore privado (alias `hilvan`).
 - Huella SHA-256 del certificado de firma:
@@ -45,6 +45,6 @@ Las evidencias (capturas, logcat, veredictos) se publican en la prerelease `andr
 
 - `app/src/main/java/es/xescotejedor/hilvan/MainActivity.java`: toda la app (WebView, puentes,
   permisos en tiempo de uso, vista de error sin conexión, barra de progreso).
-- `app/src/main/res/mipmap-*`: iconos (adaptativos y clásicos) generados desde el logo del autor.
+- `app/src/main/res/mipmap-*`: iconos (adaptativos y clásicos) regenerados el 2026-10-16 desde el nuevo emblema aportado por el autor (dibujo completo conservado; fondo crema #f6f2e1).
 - `app/src/main/AndroidManifest.xml`: permisos INTERNET, RECORD_AUDIO y WRITE_EXTERNAL_STORAGE
   (este último solo hasta API 28; desde API 29 las exportaciones usan MediaStore).
