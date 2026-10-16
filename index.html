@@ -59,6 +59,7 @@ input[type=range]{width:100%;accent-color:var(--amber);height:34px}
 .bar .in{max-width:760px;margin:0 auto;display:flex;gap:10px}
 .bar button{flex:1}
 #dieBtn{flex:0 0 auto;width:64px;padding:0;font-size:30px;background:linear-gradient(135deg,#ff6b5b,#ff8a00);box-shadow:0 0 22px rgba(255,107,91,.45)}
+#newBtn{flex:0 0 auto;padding-left:14px;padding-right:14px}
 #dieBtn.spin span{display:inline-block;animation:spin .7s linear infinite}
 @keyframes spin{to{transform:rotate(360deg)}}
 #diceBox{position:fixed;inset:0;z-index:50;background:rgba(10,8,5,.82);display:none;align-items:center;justify-content:center;flex-direction:column;gap:14px;padding:24px;text-align:center}
@@ -160,6 +161,7 @@ a{color:var(--soft)}
 <div class="bar" id="bar"><div class="in">
   <button id="dieBtn" class="hid" title="Dado de emergencia"><span>🎲</span></button>
   <button id="goBtn">✨ Empezar relato</button>
+  <button id="newBtn" class="ghost hid" title="Empezar un relato nuevo">🌱 Nuevo</button>
 </div></div>
 
 <div id="diceBox"><div id="dnum" class="roll"><i>20</i></div><div id="dtxt"></div></div>
@@ -286,7 +288,7 @@ function applyResult(j,seg){
 
 /* ---------- flujo ---------- */
 let busy=false,imgData=null;
-function setBusy(b){busy=b;$("goBtn").disabled=b;$("dieBtn").disabled=b;if(b)$("goBtn").dataset.t=$("goBtn").textContent;$("goBtn").textContent=b?"Tejiendo…":(S?"➕ Continuar":"✨ Empezar relato");$("dieBtn").classList.toggle("spin",b)}
+function setBusy(b){busy=b;$("goBtn").disabled=b;$("dieBtn").disabled=b;$("newBtn").disabled=b;if(b)$("goBtn").dataset.t=$("goBtn").textContent;$("goBtn").textContent=b?"Tejiendo…":(S?"➕ Continuar":"✨ Empezar relato");$("dieBtn").classList.toggle("spin",b)}
 function showErr(m){$("errs").innerHTML=m?`<div class="err">${esc(m)}</div>`:""}
 async function step(extra){
  if(busy)return;showErr("");extra=extra||{};
@@ -341,7 +343,7 @@ function segHTML(s,i,last){
  <div class="tools"><button class="ghost sm" data-a="img">${s.imgId?"🖼 Otra imagen":"🖼 Ilustrar"}</button>${s.imgId?`<button class="ghost sm" data-a="img2">Misma escena, otra semilla</button>`:""}<button class="ghost sm" data-a="edit">✏️ Editar</button>${last?`<button class="ghost sm" data-a="redo">↻ Otra versión</button><button class="ghost sm" data-a="del">🗑</button>`:""}</div></div>`}
 function renderAll(anim){
  renderRoster();$("start").classList.toggle("hid",!!S&&S.segs.length>0);$("params").classList.remove("hid");
- const has=S&&S.segs.length>0;$("story").classList.toggle("hid",!has);$("dieBtn").classList.toggle("hid",!has);
+ const has=S&&S.segs.length>0;$("story").classList.toggle("hid",!has);$("dieBtn").classList.toggle("hid",!has);$("newBtn").classList.toggle("hid",!has);
  $("goBtn").textContent=busy?"Tejiendo…":(has?"➕ Continuar":"✨ Empezar relato");
  renderRoster();
  if(!has)return;
@@ -388,7 +390,9 @@ document.querySelector("details:has([data-x])").addEventListener("click",async e
  else if(x==="pdf"){const w=window.open("","_blank");if(!w)return toast("Permite ventanas emergentes para imprimir");w.document.write(htmlOut());w.document.close();setTimeout(()=>w.print(),600)}});
 $("impBtn").onclick=()=>$("impFile").click();
 $("impFile").onchange=async e=>{const f=e.target.files[0];if(!f)return;try{const o=JSON.parse(await f.text());if(!o.segs||!o.bible)throw 0;const im=o.images||{};delete o.images;(o.roster||[]).forEach(r=>{if(!rfind(r.nombre))ROSTER.push(r)});rsave();delete o.roster;for(const k in im){IMGC[k]=im[k];await imgPut(k,im[k])}S=o;save();buildSliders();renderAll();renderRoster();toast("Relato importado")}catch{toast("Archivo no válido")}};
-$("reset").onclick=()=>{if(!confirm("¿Empezar otro relato? El actual se borra de este navegador (exporta antes si quieres conservarlo)."))return;S=null;localStorage.removeItem(LS);imgData=null;$("premise").value="";$("imgPrev").classList.add("hid");buildGenres();buildSliders();showErr("");renderAll();scrollTo({top:0,behavior:"smooth"})};
+function resetStory(){if(busy)return;if(!confirm("¿Empezar otro relato? El actual se borra de este navegador (exporta antes si quieres conservarlo)."))return;S=null;localStorage.removeItem(LS);imgData=null;$("premise").value="";$("imgFile").value="";$("imgPrev").classList.add("hid");buildGenres();buildSliders();showErr("");renderAll();scrollTo({top:0,behavior:"smooth"})}
+$("reset").onclick=resetStory;
+$("newBtn").onclick=resetStory;
 
 /* ---------- arranque ---------- */
 (async function init(){try{S=JSON.parse(localStorage.getItem(LS)||"null")}catch{S=null}
