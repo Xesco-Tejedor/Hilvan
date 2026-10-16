@@ -5,7 +5,7 @@
 set -u
 PKG=es.xescotejedor.hilvan
 EV=${EVIDENCE:-evidence}; mkdir -p "$EV"
-DBG=$1; REL=$2
+DBG=$1; REL=$2; DBGPREV=${3:-}
 log(){ echo "[$(date +%H:%M:%S)] $*" | tee -a "$EV/e2e-log.txt"; }
 node_e2e(){ MODE=$1 EVIDENCE=$EV MARK=${2:-} timeout 300 node android/e2e.mjs 2>&1 | tee -a "$EV/e2e-log.txt" > /tmp/last_e2e.txt; }
 razon_muerte(){ adb logcat -d | grep -E "Killing [0-9]+:$PKG|FATAL EXCEPTION" | tail -3 | tee -a "$EV/e2e-log.txt"; }
@@ -24,6 +24,23 @@ LOGPID=$!
 log "== Red del emulador: esperando conectividad"
 OKR=0; for i in 1 2 3; do adb shell ping -c1 -W2 8.8.8.8 >/dev/null 2>&1 && { OKR=1; break; }; sleep 2; done
 log "ping emulador (informativo; ICMP puede estar capado): $([ $OKR = 1 ] && echo OK || echo SIN-RESPUESTA)"
+
+log "== Actualizacion con datos: version anterior -> nueva (mismo paquete y firma de depuracion del job)"
+if [ -n "$DBGPREV" ] && [ -f "$DBGPREV" ]; then
+  adb install --no-incremental "$DBGPREV" | tee -a "$EV/e2e-log.txt"
+  log "versionCode previo instalado: $(adb shell dumpsys package $PKG | grep -m1 versionCode)"
+  start_app; sleep 8
+  node_e2e set actualizacion
+  adb install --no-incremental -r "$DBG" | tee -a "$EV/e2e-log.txt"
+  log "versionCode tras actualizar: $(adb shell dumpsys package $PKG | grep -m1 versionCode)"
+  start_app; sleep 8
+  node_e2e get actualizacion
+  if grep -q 'sobrevive-actualizacion' /tmp/last_e2e.txt; then log "ACTUALIZACION CON DATOS: OK (marcador conservado)"; else log "ACTUALIZACION CON DATOS: FALLO (marcador perdido)"; fi
+  adb exec-out screencap -p > "$EV/00-actualizacion.png"
+  adb uninstall $PKG >/dev/null
+else
+  log "sin APK previa: prueba de actualizacion omitida"
+fi
 
 log "== Instalo la APK de depuracion (mismo codigo que la release) y concedo microfono"
 adb install -r "$DBG" | tee -a "$EV/e2e-log.txt"
@@ -98,6 +115,10 @@ if [ -z "$RP" ]; then
 fi
 adb logcat -d -s AndroidRuntime:E | tail -20 | tee -a "$EV/e2e-log.txt"
 adb exec-out screencap -p > "$EV/10-release-inicio.png"
+log "== Captura del launcher con el icono instalado"
+adb shell input keyevent KEYCODE_HOME; sleep 2
+adb shell input swipe 540 1900 540 700 400; sleep 3
+adb exec-out screencap -p > "$EV/11-launcher-icono.png"
 adb shell dumpsys window | grep -m1 mCurrentFocus | tee -a "$EV/e2e-log.txt"
 kill $LOGPID 2>/dev/null
 log "excepciones JS en pagina: $(grep -c '\] EXC' "$EV/e2e-log.txt" || true)"
