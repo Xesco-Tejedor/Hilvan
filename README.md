@@ -39,7 +39,7 @@ Aplicación de escritura narrativa asistida por IA. Parte de una frase o una ima
 
 El dictado usa el reconocimiento de voz del navegador (Web Speech API). Funciona en Chrome y derivados; en otros navegadores el botón no aparece. Chrome envía el audio a sus servidores para transcribirlo: la aplicación no graba ni conserva audio. Requiere conceder el permiso de micrófono a la página.
 
-La lectura en voz alta usa las voces instaladas en el dispositivo o las del navegador (también Web Speech API). Si el navegador no la admite, el botón Escuchar no aparece. Puedes elegir la voz española en el selector «Voz de lectura», sobre el relato. La lectura modula pausas, tono y ritmo según la puntuación y el diálogo para que suene menos plana, pero la calidad final depende de la voz instalada: en Android conviene activar la voz de alta calidad en Ajustes → Sistema → Idiomas → Conversión de texto a voz. Ninguna voz gratuita de navegador equivale a una narración profesional.
+La lectura en voz alta usa las voces instaladas en el dispositivo o las del navegador (también Web Speech API). Si el navegador no la admite, el botón Escuchar no aparece. Puedes elegir la voz española en el selector «Voz de lectura», sobre el relato. La lectura modula pausas, tono y ritmo según la puntuación y el diálogo para que suene menos plana, pero la calidad final depende de la voz instalada: en Android suele poder activarse una voz de alta calidad en los ajustes de conversión de texto a voz del sistema (la ruta exacta varía según el fabricante y la versión).
 
 ## IA, conexión y privacidad
 
